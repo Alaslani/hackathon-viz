@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>هاكاثون ذكاء القضاء - تحليل التحديات</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Tajawal', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #1a472a 0%, #2d5a3d 50%, #1a472a 100%); }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+        .pulse { animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .glow { box-shadow: 0 0 30px rgba(34, 197, 94, 0.3); }
+        .card { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
+        .status-success { background: rgba(34,197,94,0.2); border: 1px solid #22c55e; }
+        .status-warning { background: rgba(234,179,8,0.2); border: 1px solid #eab308; }
+        .status-error { background: rgba(239,68,68,0.2); border: 1px solid #ef4444; }
+        .progress-bar { transition: width 0.5s ease; }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen">
+    <div id="root"></div>
+    
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <script type="text/babel">
+        const { useState } = React;
+
+        // ===== ICONS =====
+        const ChevronDown = () => (
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+        );
+
+        const ChevronUp = () => (
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+            </svg>
+        );
+
+        const Icons = {
+            Check: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>,
+            Warning: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
+            Error: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>,
+            Document: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
+            ArrowLeft: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>,
+            ArrowRight: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>,
+        };
+
+        const BrainIcon = () => (
+            <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+        );
+
+        const UserIcon = () => (
+            <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+            </svg>
+        );
+
+        const LightbulbIcon = () => (
+            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/>
+            </svg>
+        );
+
+        const TargetIcon = () => (
+            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm0-14c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+            </svg>
+        );
+
+        const WarningIcon = () => (
+            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+            </svg>
+        );
+
+        // ===== CHALLENGES DATA =====
+        const challengesData = {
+            track1: {
+                title: "المسار الأول",
+                subtitle: "الذكاء الاصطناعي والحلول الإبداعية في القضاء الإداري",
+                icon: BrainIcon,
+                color: "from-emerald-600 to-green-700",
+                challenges: [
+                    {
+                        id: 1,
+                        title: "الحد من المخالفات الإجرائية",
+                        subtitle: "أثناء الجلسات القضائية الرقمية",
+                        problem: "قد تشهد الجلسات القضائية الرقمية وقوع مخالفات أو نواقص إجرائية، مثل إغفال بعض المتطلبات النظامية أو تجاوز الخطوات الشكلية اللازمة، مما يؤثر على سلامة مسار الدعوى ويؤدي في النهاية إلى وقوع المخالفة النظامية.",
+                        goal: "رفع جودة الجلسات القضائية الرقمية عبر حلول قادرة على رصد المخاطر الإجرائية والتنبيه إليها استباقياً، بما يضمن سلامة الإجراءات، ويحد من الأخطاء المؤثرة على سير الدعوى، ويعزز سرعة وكفاءة العمل القضائي.",
+                        ideas: [
+                            "مساعد ذكي يتتبع Checklist الإجراءات",
+                            "تحليل صوتي/نصي للجلسة",
+                            "Dashboard تفاعلي للقاضي"
+                        ]
+                    },
+                    {
+                        id: 2,
+                        title: "تسريع فرز وتصنيف الدعاوى",
+                        subtitle: "تعدد وتنوع طلبات القيد",
+                        problem: "يواجه مركز العمليات كثافة الطلبات وتنوع موضوعاتها وتصنيفاتها، مما يزيد من وقت الفرز الأولي ويؤثر على سرعة إحالتها للدائرة المختصة.",
+                        goal: "تمكين مركز العمليات من تحليل وتصنيف الطلبات بشكل أسرع وأدق، لتسريع دورة سير القضية ورفع كفاءة القيد الأولي.",
+                        ideas: [
+                            "NLP عربي لتحليل النصوص",
+                            "ML مُدرَّب على قضايا سابقة",
+                            "اقتراح الدائرة مع نسبة ثقة"
+                        ]
+                    }
+                ]
+            },
+            track2: {
+                title: "المسار الثاني",
+                subtitle: "الابتكار الرقمي لتمكين رحلة المستفيد",
+                icon: UserIcon,
+                color: "from-teal-600 to-cyan-700",
+                challenges: [
+                    {
+                        id: 3,
+                        title: "التحقق من اكتمال المستندات",
+                        subtitle: "تسهيل مهمة التأكد عند تقديم الدعوى",
+                        problem: "يواجه المستفيدون صعوبة التحقق من مستنداتهم قبل التقديم، مما يؤدي إلى رفض الطلبات أو تأخير المعالجة، أحياناً واضطرارهم لمشاركة بياناتهم مع آخرين.",
+                        goal: "تمكين المستفيدين من معرفة حالة مستنداتهم ونواقصها بشكل فوري، مع تنبيهات استباقية لتحسين جودة الطلبات وتقليل التأخير.",
+                        ideas: [
+                            "OCR + AI لقراءة المستندات",
+                            "قائمة ذكية حسب نوع الدعوى",
+                            "تنبيهات استباقية للصلاحية"
+                        ],
+                        selected: true
+                    },
+                    {
+                        id: 4,
+                        title: "الوصول الرقمي الشامل",
+                        subtitle: "تسهيل الوصول لذوي الإعاقة وكبار السن",
+                        problem: "تواجه بعض الفئات تحديات في استخدام الأنظمة التقنية بسبب الإعاقة أو التقدم في السن أو تعقيد الواجهات، مما يحد من استقلاليتهم في إتمام المعاملات.",
+                        goal: "تطوير حلول وصول رقمية متقدمة، مثل واجهات مبسطة ومسارات مخصصة وأدوات مساعدة، لتمكين ذوي الإعاقة وكبار السن من استخدام الخدمات القضائية بسهولة واستقلالية مع الحفاظ على الخصوصية.",
+                        ideas: [
+                            "واجهة صوتية Voice-First",
+                            "تكبير ديناميكي وتباين عالي",
+                            "مسار مُبسَّط بخطوات أقل"
+                        ]
+                    }
+                ]
+            }
+        };
+
+        // ===== CHALLENGE CARD COMPONENT =====
+        const ChallengeCard = ({ challenge, isExpanded, onToggle, trackColor }) => (
+            <div className={`card-hover bg-white/10 backdrop-blur-lg rounded-2xl overflow-hidden border ${challenge.selected ? 'border-yellow-400 glow' : 'border-white/20'}`}>
+                <button 
+                    onClick={onToggle}
+                    className="w-full p-6 flex items-center justify-between text-white hover:bg-white/5 transition-colors"
+                >
+                    <div className="flex items-center gap-4">
+                        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${trackColor} flex items-center justify-center text-2xl font-bold relative`}>
+                            {challenge.id}
+                            {challenge.selected && (
+                                <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center">
+                                    <span className="text-xs">✓</span>
+                                </div>
+                            )}
+                        </div>
+                        <div className="text-right">
+                            <h3 className="text-xl font-bold flex items-center gap-2">
+                                {challenge.title}
+                                {challenge.selected && <span className="text-xs bg-yellow-400 text-black px-2 py-1 rounded-full">التحدي المختار</span>}
+                            </h3>
+                            <p className="text-white/60 text-sm">{challenge.subtitle}</p>
+                        </div>
+                    </div>
+                    <div className="text-white/60">
+                        {isExpanded ? <ChevronUp /> : <ChevronDown />}
+                    </div>
+                </button>
+                
+                {isExpanded && (
+                    <div className="px-6 pb-6 space-y-4">
+                        <div className="bg-red-500/20 rounded-xl p-4 border border-red-500/30">
+                            <div className="flex items-center gap-2 text-red-300 mb-2">
+                                <WarningIcon />
+                                <span className="font-bold">المشكلة</span>
+                            </div>
+                            <p className="text-white/80 text-sm leading-relaxed">{challenge.problem}</p>
+                        </div>
+                        
+                        <div className="bg-blue-500/20 rounded-xl p-4 border border-blue-500/30">
+                            <div className="flex items-center gap-2 text-blue-300 mb-2">
+                                <TargetIcon />
+                                <span className="font-bold">الهدف</span>
+                            </div>
+                            <p className="text-white/80 text-sm leading-relaxed">{challenge.goal}</p>
+                        </div>
+                        
+                        <div className="bg-yellow-500/20 rounded-xl p-4 border border-yellow-500/30">
+                            <div className="flex items-center gap-2 text-yellow-300 mb-2">
+                                <LightbulbIcon />
+                                <span className="font-bold">أفكار للحل</span>
+                            </div>
+                            <ul className="space-y-2">
+                                {challenge.ideas.map((idea, idx) => (
+                                    <li key={idx} className="flex items-center gap-2 text-white/80 text-sm">
+                                        <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
+                                        {idea}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+
+        // ===== TRACK SECTION COMPONENT =====
+        const TrackSection = ({ track, expandedId, setExpandedId }) => {
+            const Icon = track.icon;
+            return (
+                <div className="space-y-4">
+                    <div className={`bg-gradient-to-r ${track.color} rounded-2xl p-6 flex items-center gap-4 shadow-xl`}>
+                        <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center text-white">
+                            <Icon />
+                        </div>
+                        <div>
+                            <h2 className="text-2xl font-bold text-white">{track.title}</h2>
+                            <p className="text-white/80">{track.subtitle}</p>
+                        </div>
+                    </div>
+                    
+                    <div className="space-y-4 pr-4">
+                        {track.challenges.map(challenge => (
+                            <ChallengeCard
+                                key={challenge.id}
+                                challenge={challenge}
+                                trackColor={track.color}
+                                isExpanded={expandedId === challenge.id}
+                                onToggle={() => setExpandedId(expandedId === challenge.id ? null : challenge.id)}
+                            />
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        // ===== CHALLENGES TAB =====
+        const ChallengesTab = () => {
+            const [expandedId, setExpandedId] = useState(null);
+            const [filterTab, setFilterTab] = useState('all');
+
+            return (
+                <div className="space-y-6">
+                    {/* Filter Tabs */}
+                    <div className="flex justify-center gap-2">
+                        {[
+                            { id: 'all', label: 'جميع التحديات' },
+                            { id: 'track1', label: 'المسار الأول' },
+                            { id: 'track2', label: 'المسار الثاني' }
+                        ].map(tab => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setFilterTab(tab.id)}
+                                className={`px-4 py-2 rounded-xl font-medium transition-all text-sm ${
+                                    filterTab === tab.id
+                                        ? 'bg-white text-green-800 shadow-lg'
+                                        : 'bg-white/10 text-white hover:bg-white/20'
+                                }`}
+                            >
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Content */}
+                    <div className="space-y-8">
+                        {(filterTab === 'all' || filterTab === 'track1') && (
+                            <TrackSection 
+                                track={challengesData.track1} 
+                                expandedId={expandedId}
+                                setExpandedId={setExpandedId}
+                            />
+                        )}
+                        {(filterTab === 'all' || filterTab === 'track2') && (
+                            <TrackSection 
+                                track={challengesData.track2}
+                                expandedId={expandedId}
+                                setExpandedId={setExpandedId}
+                            />
+                        )}
+                    </div>
+
+                    {/* Stats */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+                        {[
+                            { label: 'مسارات', value: '2' },
+                            { label: 'تحديات', value: '4' },
+                            { label: 'معايير تحكيم', value: '10' },
+                            { label: 'أعضاء الفريق', value: '3-5' }
+                        ].map((stat, idx) => (
+                            <div key={idx} className="bg-white/10 backdrop-blur rounded-xl p-4 text-center">
+                                <div className="text-3xl font-bold text-white">{stat.value}</div>
+                                <div className="text-white/60 text-sm">{stat.label}</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        // ===== PROTOTYPE TAB =====
+        const PrototypeTab = () => {
+            const [step, setStep] = useState(1);
+            const [answers, setAnswers] = useState({});
+            const [documents, setDocuments] = useState([
+                { id: 1, name: 'صورة الهوية الوطنية', status: null, required: true },
+                { id: 2, name: 'صورة القرار الإداري', status: null, required: true },
+                { id: 3, name: 'التظلم المقدم للجهة', status: null, required: true },
+                { id: 4, name: 'رد الجهة على التظلم', status: null, required: false },
+                { id: 5, name: 'الوكالة الشرعية', status: null, required: false },
+            ]);
+
+            const questions = [
+                { id: 'q1', q: 'ما طبيعة مشكلتك مع الجهة الحكومية؟', options: ['صدر قرار ضدي', 'نزاع على عقد', 'طلب تعويض', 'أخرى'] },
+                { id: 'q2', q: 'هل تظلمت للجهة قبل رفع الدعوى؟', options: ['نعم، وجاء الرد', 'نعم، ولم يأت رد', 'لا'] },
+                { id: 'q3', q: 'هل لديك وكيل شرعي؟', options: ['نعم', 'لا، سأترافع بنفسي'] },
+            ];
+
+            const simulateUpload = (docId) => {
+                const messages = {
+                    success: ['ساري حتى 2027', 'مقبول', 'واضح ومكتمل'],
+                    warning: ['تنتهي خلال 30 يوم', 'جودة متوسطة', 'يُفضل نسخة أوضح'],
+                    error: ['منتهي الصلاحية', 'غير واضح', 'ناقص']
+                };
+                
+                const status = Math.random() > 0.3 ? 'success' : (Math.random() > 0.5 ? 'warning' : 'error');
+                const message = messages[status][Math.floor(Math.random() * messages[status].length)];
+                
+                setDocuments(docs => docs.map(d => 
+                    d.id === docId ? { ...d, status, message } : d
+                ));
+            };
+
+            const completionRate = () => {
+                const required = documents.filter(d => d.required);
+                const completed = required.filter(d => d.status === 'success' || d.status === 'warning');
+                return Math.round((completed.length / required.length) * 100);
+            };
+
+            const resetPrototype = () => {
+                setStep(1);
+                setAnswers({});
+                setDocuments(docs => docs.map(d => ({ ...d, status: null, message: null })));
+            };
+
+            const renderStep1 = () => (
+                <div className="space-y-4">
+                    <div className="text-center mb-6">
+                        <div className="text-5xl mb-3">🎯</div>
+                        <h3 className="text-xl font-bold text-white">دعنا نحدد نوع دعواك</h3>
+                        <p className="text-white/60 text-sm">أجب على الأسئلة التالية</p>
+                    </div>
+                    {questions.map((item, idx) => (
+                        <div key={idx} className="card rounded-xl p-4">
+                            <div className="text-white font-medium mb-3">{item.q}</div>
+                            <div className="grid grid-cols-2 gap-2">
+                                {item.options.map((opt, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => setAnswers({...answers, [item.id]: opt})}
+                                        className={`p-3 rounded-lg text-sm transition-all ${
+                                            answers[item.id] === opt 
+                                                ? 'bg-green-500 text-white' 
+                                                : 'bg-white/10 hover:bg-white/20 text-white'
+                                        }`}
+                                    >
+                                        {opt}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                    <button
+                        onClick={() => setStep(2)}
+                        disabled={Object.keys(answers).length < 3}
+                        className={`w-full p-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${
+                            Object.keys(answers).length >= 3
+                                ? 'bg-green-500 hover:bg-green-600 text-white'
+                                : 'bg-white/20 text-white/50 cursor-not-allowed'
+                        }`}
+                    >
+                        التالي
+                        <Icons.ArrowLeft />
+                    </button>
+                </div>
+            );
+
+            const renderStep2 = () => (
+                <div className="space-y-4">
+                    <div className="card rounded-xl p-4 text-center">
+                        <div className="text-3xl mb-2">📂</div>
+                        <h3 className="text-lg font-bold text-white">دعوى إلغاء قرار إداري</h3>
+                        <p className="text-white/60 text-sm">المستندات المطلوبة</p>
+                    </div>
+
+                    <div className="space-y-2">
+                        {documents.map(doc => (
+                            <div key={doc.id} className={`card rounded-xl p-4 ${
+                                doc.status === 'success' ? 'status-success' :
+                                doc.status === 'warning' ? 'status-warning' :
+                                doc.status === 'error' ? 'status-error' : ''
+                            }`}>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <Icons.Document />
+                                        <div>
+                                            <div className="text-white font-medium text-sm">
+                                                {doc.name}
+                                                {doc.required && <span className="text-red-400 mr-1">*</span>}
+                                            </div>
+                                            {doc.message && (
+                                                <div className={`text-xs ${
+                                                    doc.status === 'success' ? 'text-green-400' :
+                                                    doc.status === 'warning' ? 'text-yellow-400' :
+                                                    'text-red-400'
+                                                }`}>{doc.message}</div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    {doc.status ? (
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                            doc.status === 'success' ? 'bg-green-500' :
+                                            doc.status === 'warning' ? 'bg-yellow-500' :
+                                            'bg-red-500'
+                                        }`}>
+                                            {doc.status === 'success' ? <Icons.Check /> :
+                                             doc.status === 'warning' ? <Icons.Warning /> :
+                                             <Icons.Error />}
+                                        </div>
+                                    ) : (
+                                        <button
+                                            onClick={() => simulateUpload(doc.id)}
+                                            className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-white text-sm transition-all"
+                                        >
+                                            رفع
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setStep(1)}
+                            className="flex-1 p-4 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
+                        >
+                            <Icons.ArrowRight />
+                            السابق
+                        </button>
+                        <button
+                            onClick={() => setStep(3)}
+                            className="flex-1 p-4 bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
+                        >
+                            التالي
+                            <Icons.ArrowLeft />
+                        </button>
+                    </div>
+                </div>
+            );
+
+            const renderStep3 = () => (
+                <div className="space-y-4">
+                    <div className="card rounded-xl p-6 text-center">
+                        <div className="text-6xl mb-4">{completionRate() === 100 ? '🎉' : '📊'}</div>
+                        <h3 className="text-2xl font-bold text-white mb-2">نسبة الاكتمال</h3>
+                        <div className="text-5xl font-bold text-green-400 mb-4">{completionRate()}%</div>
+                        <div className="h-4 bg-white/10 rounded-full overflow-hidden">
+                            <div 
+                                className="h-full bg-gradient-to-l from-green-400 to-green-600 progress-bar" 
+                                style={{width: `${completionRate()}%`}}
+                            ></div>
+                        </div>
+                    </div>
+
+                    <div className="card rounded-xl p-4">
+                        <h4 className="text-white font-bold mb-3">ملخص الفحص</h4>
+                        <div className="space-y-2">
+                            {documents.filter(d => d.status).map(doc => (
+                                <div key={doc.id} className="flex items-center justify-between text-sm">
+                                    <span className="text-white/80">{doc.name}</span>
+                                    <span className={`${
+                                        doc.status === 'success' ? 'text-green-400' :
+                                        doc.status === 'warning' ? 'text-yellow-400' :
+                                        'text-red-400'
+                                    }`}>{doc.message}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {completionRate() === 100 ? (
+                        <button className="w-full p-4 bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold transition-all">
+                            ✓ جاهز للتقديم - انتقل لمنصة معين
+                        </button>
+                    ) : (
+                        <div className="card rounded-xl p-4 text-center">
+                            <div className="text-yellow-400 font-bold mb-2">⚠️ يوجد نواقص</div>
+                            <p className="text-white/60 text-sm">يرجى استكمال المستندات المطلوبة</p>
+                            <button
+                                onClick={() => setStep(2)}
+                                className="mt-3 px-6 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-white text-sm transition-all"
+                            >
+                                العودة لاستكمال المستندات
+                            </button>
+                        </div>
+                    )}
+
+                    <button
+                        onClick={resetPrototype}
+                        className="w-full p-3 bg-white/10 hover:bg-white/20 text-white/60 rounded-xl text-sm transition-all"
+                    >
+                        🔄 إعادة التجربة من البداية
+                    </button>
+                </div>
+            );
+
+            return (
+                <div className="max-w-lg mx-auto">
+                    {/* Header */}
+                    <div className="text-center mb-6">
+                        <div className="inline-block bg-yellow-400 text-black px-4 py-1 rounded-full text-sm font-bold mb-3">
+                            🚀 بروتوتايب تفاعلي
+                        </div>
+                        <h2 className="text-2xl font-bold text-white mb-1">📋 مُستندي</h2>
+                        <p className="text-white/60 text-sm">مساعدك الذكي للتأكد من اكتمال المستندات</p>
+                    </div>
+
+                    {/* Progress Steps */}
+                    <div className="flex items-center justify-center gap-2 mb-6">
+                        {[
+                            { num: 1, label: 'تحديد الدعوى' },
+                            { num: 2, label: 'رفع المستندات' },
+                            { num: 3, label: 'النتيجة' }
+                        ].map((s, i) => (
+                            <div key={s.num} className="flex items-center">
+                                <div className="flex flex-col items-center">
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+                                        step >= s.num ? 'bg-green-500 text-white' : 'bg-white/20 text-white/60'
+                                    }`}>{s.num}</div>
+                                    <span className="text-xs text-white/60 mt-1">{s.label}</span>
+                                </div>
+                                {i < 2 && <div className={`w-8 h-1 mx-1 ${step > s.num ? 'bg-green-500' : 'bg-white/20'}`}></div>}
+                            </div>
+                        ))}
+                    </div>
+
+                    {step === 1 && renderStep1()}
+                    {step === 2 && renderStep2()}
+                    {step === 3 && renderStep3()}
+                </div>
+            );
+        };
+
+        // ===== MAIN APP =====
+        const App = () => {
+            const [activeTab, setActiveTab] = useState('challenges');
+
+            return (
+                <div className="min-h-screen p-4 md:p-8">
+                    {/* Header */}
+                    <div className="text-center mb-8">
+                        <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-2 rounded-full text-green-300 text-sm mb-4">
+                            <span className="w-2 h-2 bg-green-400 rounded-full pulse"></span>
+                            4-5 فبراير 2026 | فندق حياة ريجنسي الرياض
+                        </div>
+                        <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+                            هاكاثون ذكاء القضاء
+                        </h1>
+                        <p className="text-xl text-white/70">
+                            حيث تلتقي التقنية بالإبداع لخدمة القضاء
+                        </p>
+                    </div>
+
+                    {/* Main Tabs */}
+                    <div className="flex justify-center gap-4 mb-8 max-w-xl mx-auto">
+                        <button
+                            onClick={() => setActiveTab('challenges')}
+                            className={`flex-1 p-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${
+                                activeTab === 'challenges'
+                                    ? 'bg-white text-green-800 shadow-lg'
+                                    : 'bg-white/10 text-white hover:bg-white/20'
+                            }`}
+                        >
+                            📋 التحديات
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('prototype')}
+                            className={`flex-1 p-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${
+                                activeTab === 'prototype'
+                                    ? 'bg-white text-green-800 shadow-lg'
+                                    : 'bg-white/10 text-white hover:bg-white/20'
+                            }`}
+                        >
+                            🚀 البروتوتايب
+                        </button>
+                    </div>
+
+                    {/* Content */}
+                    <div className="max-w-4xl mx-auto">
+                        {activeTab === 'challenges' ? <ChallengesTab /> : <PrototypeTab />}
+                    </div>
+
+                    {/* Footer */}
+                    <div className="text-center mt-12 text-white/40 text-sm">
+                        ديوان المظالم | المملكة العربية السعودية
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
