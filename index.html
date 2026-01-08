@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1B5E20">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>مؤشر - ديوان المظالم</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        bog: {
+                            green: '#1B5E20',
+                            greenLight: '#2E7D32',
+                            greenDark: '#0D3D16',
+                            gold: '#C5A028',
+                            goldLight: '#D4AF37',
+                            cream: '#F5F5F0',
+                            gray: '#4A4A4A',
+                        },
+                        iam: {
+                            bg: '#0f1419',
+                            card: '#1c2128',
+                            border: '#30363d',
+                            green: '#238636',
+                            greenHover: '#2ea043',
+                            text: '#c9d1d9',
+                            textMuted: '#8b949e',
+                            input: '#0d1117',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { 
+            font-family: 'IBM Plex Sans Arabic', sans-serif; 
+            -webkit-tap-highlight-color: transparent;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* Gradient Header */
+        .gradient-header { background: linear-gradient(135deg, #0D3D16 0%, #1B5E20 50%, #2E7D32 100%); }
+        
+        /* Cards */
+        .card { 
+            background: white; 
+            border-radius: 12px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08); 
+            border: 1px solid #E5E5E5; 
+        }
+        .card-hover { transition: all 0.3s ease; }
+        @media (hover: hover) {
+            .card-hover:hover { 
+                box-shadow: 0 8px 24px rgba(0,0,0,0.12); 
+                transform: translateY(-2px); 
+            }
+        }
+        
+        /* Buttons */
+        .btn-primary { background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%); }
+        .btn-primary:hover { background: linear-gradient(135deg, #0D3D16 0%, #1B5E20 100%); }
+        .btn-primary:active { transform: scale(0.98); }
+        
+        /* Status indicators */
+        .status-success { background: #E8F5E9; border: 1px solid #4CAF50; }
+        .status-warning { background: #FFF8E1; border: 1px solid #FFC107; }
+        .status-error { background: #FFEBEE; border: 1px solid #F44336; }
+        
+        /* Progress bar */
+        .progress-bar { transition: width 0.8s ease; }
+        
+        /* Typing animation */
+        .typing span { animation: blink 1.4s infinite; opacity: 0.3; }
+        .typing span:nth-child(2) { animation-delay: 0.2s; }
+        .typing span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes blink { 0%, 60%, 100% { opacity: 0.3; } 30% { opacity: 1; } }
+        
+        /* Fade in animation */
+        .fade-in { animation: fadeIn 0.5s ease forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* AI Glow effect */
+        .ai-glow { box-shadow: 0 0 20px rgba(27, 94, 32, 0.3); }
+        
+        /* Stroke colors for SVG gauge */
+        .stroke-green-500 { stroke: #22c55e; }
+        .stroke-yellow-500 { stroke: #eab308; }
+        .stroke-orange-500 { stroke: #f97316; }
+        .stroke-red-500 { stroke: #ef4444; }
+        
+        /* Stats cards */
+        .stat-card { 
+            background: rgba(255,255,255,0.1); 
+            border: 1px solid rgba(255,255,255,0.2); 
+            cursor: pointer; 
+            transition: all 0.3s; 
+        }
+        .stat-card:active { transform: scale(0.98); }
+        @media (hover: hover) {
+            .stat-card:hover { background: rgba(255,255,255,0.15); transform: translateY(-3px); }
+        }
+        .stat-card.active { background: rgba(255,255,255,0.2); border-color: #C5A028; }
+        
+        /* Expandable content */
+        .expand-content { max-height: 0; overflow: hidden; transition: max-height 0.5s ease; }
+        .expand-content.open { max-height: 1200px; }
+        
+        /* IAM Login styles */
+        .iam-input { background: #0d1117; border: 1px solid #30363d; color: #c9d1d9; }
+        .iam-input:focus { border-color: #238636; outline: none; box-shadow: 0 0 0 3px rgba(35, 134, 54, 0.3); }
+        .iam-input::placeholder { color: #8b949e; }
+        .iam-btn-primary { background: #21262d; color: #8b949e; border: 1px solid #30363d; }
+        .iam-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+        .iam-btn-primary.active { background: #238636; color: white; border-color: #238636; }
+        .iam-btn-green { background: #238636; color: white; }
+        .iam-btn-green:hover { background: #2ea043; }
+        .iam-divider { display: flex; align-items: center; text-align: center; color: #8b949e; }
+        .iam-divider::before, .iam-divider::after { content: ''; flex: 1; border-bottom: 1px solid #30363d; }
+        .iam-divider::before { margin-left: 1rem; }
+        .iam-divider::after { margin-right: 1rem; }
+        
+        /* Spinner */
+        .nafath-spinner { animation: spin 1.5s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        
+        /* Number selection boxes */
+        .number-box { transition: all 0.3s; min-height: 70px; min-width: 70px; }
+        .number-box:active { transform: scale(0.95); }
+        .number-box.selected { background: #238636; color: white; border-color: #238636; }
+        
+        /* Mobile-specific styles */
+        @media (max-width: 640px) {
+            .mobile-text-sm { font-size: 0.875rem; }
+            .mobile-text-base { font-size: 1rem; }
+            .mobile-p-4 { padding: 1rem; }
+            .mobile-gap-2 { gap: 0.5rem; }
+        }
+        
+        /* Touch-friendly minimum sizes */
+        button, .touchable {
+            min-height: 44px;
+        }
+        
+        /* Safe area for notched phones */
+        .safe-area-top { padding-top: env(safe-area-inset-top); }
+        .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
+        
+        /* Chat bubble responsive */
+        @media (max-width: 640px) {
+            .chat-container {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                width: 100%;
+                max-width: 100%;
+                border-radius: 16px 16px 0 0;
+                max-height: 70vh;
+            }
+        }
+        
+        /* Hide scrollbar but allow scrolling */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-bog-cream min-h-screen">
+    <div id="root"></div>
+    
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // ===== ICONS =====
+        const Icons = {
+            Logo: ({ className = "w-8 h-8 sm:w-10 sm:h-10" }) => (
+                <svg className={className} viewBox="0 0 100 100" fill="none">
+                    <circle cx="50" cy="50" r="45" fill="#1B5E20"/>
+                    <path d="M30 70V35h8v35h-8zM42 70V45h8v25h-8zM54 70V40h8v30h-8zM66 70V30h8v40h-8z" fill="#C5A028"/>
+                    <circle cx="50" cy="25" r="8" fill="#C5A028"/>
+                </svg>
+            ),
+            Check: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>,
+            Warning: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
+            Error: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>,
+            Document: () => <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
+            Upload: () => <svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>,
+            AI: () => <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
+            Scan: () => <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>,
+            Chat: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>,
+            Shield: () => <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>,
+            Link: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>,
+            ArrowLeft: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>,
+            ArrowRight: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>,
+            Calendar: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+            ChevronDown: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>,
+            ChevronUp: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>,
+            User: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>,
+            Users: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
+            Trophy: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>,
+            Target: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
+            Route: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>,
+            Fingerprint: () => <svg className="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" /></svg>,
+            Smartphone: () => <svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
+            Logout: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>,
+            Close: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>,
+        };
+
+        // ===== DATA =====
+        const statsData = {
+            tracks: { title: 'المسارات', items: [{ name: 'المسار الأول', desc: 'الذكاء الاصطناعي والحلول الإبداعية في القضاء الإداري', icon: '🧠' }, { name: 'المسار الثاني', desc: 'الابتكار الرقمي لتمكين رحلة المستفيد', icon: '👥' }] },
+            challenges: { title: 'التحديات', items: [{ name: 'الحد من المخالفات الإجرائية', track: 'المسار الأول', icon: '⚖️' }, { name: 'تسريع فرز وتصنيف الدعاوى', track: 'المسار الأول', icon: '📊' }, { name: 'التحقق من اكتمال المستندات', track: 'المسار الثاني', icon: '📋', selected: true }, { name: 'الوصول الرقمي الشامل', track: 'المسار الثاني', icon: '♿' }] },
+            criteria: { title: 'معايير التحكيم', items: [{ name: 'قابلية التنفيذ', desc: 'إمكانية تحول الفكرة إلى منصة/خدمة فعلية', weight: '10%' }, { name: 'أدوات التنفيذ', desc: 'استخدام التقنيات الحديثة', weight: '10%' }, { name: 'القبول القانوني', desc: 'التوافق مع الأنظمة واللوائح القضائية', weight: '10%' }, { name: 'الاستدامة', desc: 'قابلية الاستمرار على المدى الطويل', weight: '10%' }, { name: 'التنفيذ التقني', desc: 'جودة واتساق التقنيات المستخدمة', weight: '10%' }, { name: 'أصالة الفكرة', desc: 'عدم التكرار أو التقليد', weight: '10%' }, { name: 'مستوى الصلة', desc: 'معالجة تحديات ديوان المظالم', weight: '10%' }, { name: 'الأثر المتوقع', desc: 'التأثير الإيجابي على المشكلة', weight: '10%' }, { name: 'الابتكار والإبداع', desc: 'درجة الابتكار في الحل', weight: '10%' }, { name: 'جودة العرض', desc: 'وضوح وجودة تقديم الحل', weight: '10%' }] },
+            team: { title: 'أعضاء الفريق', items: [{ name: 'المحامية/ نوف العجمي', role: 'قائد الفريق', icon: '👩‍⚖️' }, { name: 'المهندس/ أحمد العصلاني', role: 'المطور التقني', icon: '👨‍💻' }, { name: 'الأستاذة/ حصة القحطاني', role: 'عضو الفريق', icon: '👩‍💼' }, { name: 'الأستاذة/ روان آل سيف', role: 'عضو الفريق', icon: '👩‍💼' }, { name: 'الأستاذة/ مريم الأحمري', role: 'عضو الفريق', icon: '👩‍💼' }] }
+        };
+
+        const aiAnalysisResults = {
+            'هوية': { status: 'success', message: 'الهوية سارية', details: ['تم التحقق من رقم الهوية', 'الصورة واضحة ومقروءة'], confidence: 98 },
+            'قرار': { status: 'success', message: 'القرار مكتمل البيانات', details: ['رقم القرار: 1234/46', 'تاريخ الإصدار: 1446/03/15 هـ'], confidence: 95 },
+            'تظلم': { status: 'warning', message: 'التظلم مقبول', details: ['تاريخ التظلم: 1446/04/01 هـ', 'مضى 45 يوماً'], confidence: 85 },
+            'رد': { status: 'success', message: 'رد الجهة موثق', details: ['تاريخ الرد: 1446/05/01 هـ'], confidence: 92 },
+            'وكالة': { status: 'success', message: 'الوكالة سارية', details: ['صادرة من ناجز', 'تشمل صلاحية التقاضي'], confidence: 96 },
+            'رخصة': { status: 'success', message: 'الرخصة سارية', details: ['رخصة محاماة معتمدة', 'سارية المفعول'], confidence: 97 },
+        };
+
+        // ===== NAFATH LOGIN =====
+        const NafathLogin = ({ onLoginSuccess }) => {
+            const [stage, setStage] = useState('input');
+            const [nationalId, setNationalId] = useState('');
+            const [error, setError] = useState('');
+            const [verificationNumber, setVerificationNumber] = useState(null);
+            const [selectedNumber, setSelectedNumber] = useState(null);
+            const [countdown, setCountdown] = useState(90);
+            const VALID_ID = '1234567890';
+
+            const handleSubmit = () => {
+                if (nationalId.length !== 10) { setError('رقم الهوية يجب أن يكون 10 أرقام'); return; }
+                setError(''); setStage('verifying');
+                setTimeout(() => {
+                    if (nationalId === VALID_ID) { setVerificationNumber(Math.floor(Math.random() * 90) + 10); setStage('numbers'); }
+                    else { setStage('error'); }
+                }, 2000);
+            };
+
+            const handleNumberSelect = (num) => {
+                setSelectedNumber(num);
+                if (num === verificationNumber) {
+                    setStage('success');
+                    setTimeout(() => onLoginSuccess({ id: nationalId, name: 'عبدالله محمد السعيد', verified: true }), 1500);
+                }
+            };
+
+            useEffect(() => {
+                if (stage === 'numbers' && countdown > 0) {
+                    const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+                    return () => clearTimeout(timer);
+                }
+            }, [stage, countdown]);
+
+            const generateNumbers = () => {
+                if (!verificationNumber) return [];
+                const numbers = [verificationNumber];
+                while (numbers.length < 3) { const rand = Math.floor(Math.random() * 90) + 10; if (!numbers.includes(rand)) numbers.push(rand); }
+                return numbers.sort(() => Math.random() - 0.5);
+            };
+
+            return (
+                <div className="min-h-screen bg-iam-bg flex items-center justify-center p-4 safe-area-top safe-area-bottom">
+                    <div className="w-full max-w-md">
+                        <div className="bg-iam-card rounded-xl p-6 sm:p-8 shadow-2xl border border-iam-border">
+                            
+                            {stage === 'input' && (
+                                <div className="fade-in">
+                                    <div className="text-center mb-6 sm:mb-8">
+                                        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">تسجيل الدخول</h1>
+                                        <p className="text-iam-textMuted text-sm sm:text-base">مرحبا بك عميل ديوان المظالم</p>
+                                    </div>
+                                    <div className="mb-4 sm:mb-6">
+                                        <label className="block text-sm font-medium text-iam-text mb-2 text-right">رقم الهوية <span className="text-red-500">*</span></label>
+                                        <input type="tel" inputMode="numeric" pattern="[0-9]*" value={nationalId} onChange={(e) => setNationalId(e.target.value.replace(/\D/g, '').slice(0, 10))} placeholder="الرجاء إدخال رقم الهوية" className="w-full p-3 sm:p-4 rounded-lg iam-input text-base sm:text-lg" dir="rtl" autoComplete="off" />
+                                        {error && <p className="text-red-500 text-sm mt-2 text-right">{error}</p>}
+                                    </div>
+                                    <button onClick={handleSubmit} disabled={nationalId.length !== 10} className={`w-full p-3 sm:p-4 rounded-lg font-bold text-base sm:text-lg transition-all mb-4 sm:mb-6 ${nationalId.length === 10 ? 'iam-btn-primary active' : 'iam-btn-primary'}`}>تسجيل الدخول</button>
+                                    <div className="iam-divider text-xs sm:text-sm mb-4 sm:mb-6">أو الدخول بإستخدام</div>
+                                    <button className="w-full p-3 sm:p-4 rounded-lg iam-btn-green font-bold text-base sm:text-lg mb-4 sm:mb-6">اسم المستخدم وكلمة المرور</button>
+                                    <div className="border-t border-iam-border my-4 sm:my-6"></div>
+                                    <div className="text-center text-sm sm:text-base"><span className="text-iam-textMuted">ليس لديك حساب؟</span> <a href="#" className="text-iam-green hover:underline">إنشاء حساب</a></div>
+                                    <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-iam-input rounded-lg border border-iam-border">
+                                        <p className="text-xs sm:text-sm text-iam-textMuted text-center">💡 <span className="text-iam-green">للتجربة:</span> استخدم رقم الهوية<br /><code className="bg-iam-card px-2 sm:px-3 py-1 rounded mt-2 inline-block text-iam-text font-mono text-sm sm:text-base" dir="ltr">1234567890</code></p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {stage === 'verifying' && (
+                                <div className="text-center py-8 sm:py-12 fade-in">
+                                    <div className="relative w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6">
+                                        <div className="absolute inset-0 border-4 border-iam-green rounded-full nafath-spinner" style={{ borderTopColor: 'transparent' }}></div>
+                                        <div className="absolute inset-2 sm:inset-3 bg-iam-input rounded-full flex items-center justify-center"><Icons.Smartphone /></div>
+                                    </div>
+                                    <h3 className="text-lg sm:text-xl font-bold text-white mb-2">جاري التحقق</h3>
+                                    <p className="text-iam-textMuted text-sm sm:text-base">يرجى الانتظار...</p>
+                                </div>
+                            )}
+
+                            {stage === 'numbers' && (
+                                <div className="text-center fade-in">
+                                    <div className="mb-4 sm:mb-6">
+                                        <div className="w-12 h-12 sm:w-16 sm:h-16 bg-iam-input rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 border border-iam-border"><Icons.Smartphone /></div>
+                                        <h3 className="text-lg sm:text-xl font-bold text-white mb-2">تأكيد الهوية عبر نفاذ</h3>
+                                        <p className="text-iam-textMuted text-sm sm:text-base mb-3 sm:mb-4">افتح تطبيق نفاذ واختر الرقم الظاهر</p>
+                                        <div className="bg-iam-green/20 border border-iam-green rounded-lg p-2 sm:p-3 mb-4 sm:mb-6">
+                                            <p className="text-xs sm:text-sm text-iam-green">🎯 الرقم الصحيح: <strong className="text-xl sm:text-2xl">{verificationNumber}</strong></p>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+                                        {generateNumbers().map((num) => (
+                                            <button key={num} onClick={() => handleNumberSelect(num)} className={`w-16 h-16 sm:w-20 sm:h-20 rounded-xl border-2 border-iam-border text-xl sm:text-2xl font-bold transition-all number-box text-iam-text ${selectedNumber === num ? 'selected' : ''}`}>{num}</button>
+                                        ))}
+                                    </div>
+                                    <div className="text-xs sm:text-sm text-iam-textMuted">ينتهي خلال: <span className="font-bold text-iam-green">{countdown}</span> ثانية</div>
+                                </div>
+                            )}
+
+                            {stage === 'success' && (
+                                <div className="text-center py-8 sm:py-12 fade-in">
+                                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-iam-green/20 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                                        <svg className="w-8 h-8 sm:w-10 sm:h-10 text-iam-green" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                                    </div>
+                                    <h3 className="text-lg sm:text-xl font-bold text-iam-green mb-2">تم التحقق بنجاح!</h3>
+                                    <p className="text-iam-textMuted text-sm sm:text-base">جاري تحويلك للمنصة...</p>
+                                </div>
+                            )}
+
+                            {stage === 'error' && (
+                                <div className="text-center py-8 sm:py-12 fade-in">
+                                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                                        <svg className="w-8 h-8 sm:w-10 sm:h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" /></svg>
+                                    </div>
+                                    <h3 className="text-lg sm:text-xl font-bold text-red-500 mb-2">فشل التحقق</h3>
+                                    <p className="text-iam-textMuted mb-4 text-sm sm:text-base">رقم الهوية غير صحيح</p>
+                                    <button onClick={() => { setStage('input'); setNationalId(''); }} className="px-4 sm:px-6 py-2 sm:py-3 iam-btn-green rounded-lg font-bold text-sm sm:text-base">حاول مرة أخرى</button>
+                                </div>
+                            )}
+                        </div>
+                        <div className="text-center mt-4 sm:mt-6"><p className="text-xs text-iam-textMuted">⚠️ هذه محاكاة لغرض العرض التوضيحي</p></div>
+                    </div>
+                </div>
+            );
+        };
+
+        // ===== HEADER =====
+        const Header = ({ user, onLogout }) => (
+            <header className="gradient-header text-white safe-area-top">
+                <div className="max-w-6xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 sm:gap-4">
+                            <Icons.Logo />
+                            <div>
+                                <h1 className="text-base sm:text-xl font-bold">ديوان المظالم</h1>
+                                <p className="text-green-200 text-xs sm:text-sm hidden sm:block">Board of Grievances</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 sm:gap-4">
+                            <div className="hidden md:block bg-white/10 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm">
+                                <span className="text-green-200">هاكاثون ذكاء القضاء</span>
+                                <span className="mx-2">|</span>
+                                <span>4-5 فبراير 2026</span>
+                            </div>
+                            {user && (
+                                <div className="flex items-center gap-2 sm:gap-3 bg-white/10 px-2 sm:px-4 py-2 rounded-lg">
+                                    <div className="w-7 h-7 sm:w-8 sm:h-8 bg-bog-gold rounded-full flex items-center justify-center"><Icons.User /></div>
+                                    <div className="hidden sm:block text-sm">
+                                        <div className="font-medium">{user.name}</div>
+                                        <div className="text-green-200 text-xs flex items-center gap-1"><span className="w-2 h-2 bg-green-400 rounded-full"></span>موثق عبر نفاذ</div>
+                                    </div>
+                                    <button onClick={onLogout} className="p-2 hover:bg-white/10 rounded-lg transition-colors"><Icons.Logout /></button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </header>
+        );
+
+        // ===== STATS SECTION =====
+        const StatsSection = () => {
+            const [expanded, setExpanded] = useState(null);
+            const stats = [
+                { id: 'tracks', value: '2', label: 'مسارات', icon: <Icons.Route /> },
+                { id: 'challenges', value: '4', label: 'تحديات', icon: <Icons.Target /> },
+                { id: 'criteria', value: '10', label: 'معايير', icon: <Icons.Trophy /> },
+                { id: 'team', value: '5', label: 'الفريق', icon: <Icons.Users /> },
+            ];
+
+            const renderContent = (id) => {
+                const data = statsData[id];
+                if (!data || expanded !== id) return null;
+                return (
+                    <div className={`expand-content ${expanded === id ? 'open' : ''}`}>
+                        <div className="bg-white/5 rounded-xl p-3 sm:p-4 mt-4 border border-white/10">
+                            <h4 className="text-base sm:text-lg font-bold text-white mb-3 sm:mb-4">{data.title}</h4>
+                            <div className="space-y-2 sm:space-y-3 max-h-64 overflow-y-auto hide-scrollbar">
+                                {data.items.map((item, i) => (
+                                    <div key={i} className={`p-2 sm:p-3 rounded-lg border ${item.selected ? 'bg-bog-gold/20 border-bog-gold' : 'bg-white/5 border-white/10'}`}>
+                                        <div className="flex items-center gap-2 sm:gap-3">
+                                            {item.icon && <span className="text-xl sm:text-2xl">{item.icon}</span>}
+                                            <div className="flex-1 min-w-0">
+                                                <div className="font-medium text-white text-sm sm:text-base flex flex-wrap items-center gap-1 sm:gap-2">
+                                                    <span className="truncate">{item.name}</span>
+                                                    {item.selected && <span className="text-xs bg-bog-gold text-black px-2 py-0.5 rounded-full whitespace-nowrap">المختار</span>}
+                                                </div>
+                                                {item.desc && <div className="text-xs sm:text-sm text-white/60 truncate">{item.desc}</div>}
+                                                {item.role && <div className="text-xs sm:text-sm text-bog-gold">{item.role}</div>}
+                                                {item.weight && <div className="text-xs text-bog-gold">الوزن: {item.weight}</div>}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="gradient-header py-4 sm:py-8 mb-4 sm:mb-8">
+                    <div className="max-w-4xl mx-auto px-3 sm:px-4">
+                        <div className="grid grid-cols-4 gap-2 sm:gap-4">
+                            {stats.map((stat) => (
+                                <button key={stat.id} onClick={() => setExpanded(expanded === stat.id ? null : stat.id)} className={`stat-card w-full p-3 sm:p-6 rounded-xl text-center ${expanded === stat.id ? 'active' : ''}`}>
+                                    <div className="text-2xl sm:text-4xl font-bold text-white mb-1">{stat.value}</div>
+                                    <div className="text-white/80 text-xs sm:text-sm flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2">
+                                        <span className="hidden sm:inline">{stat.icon}</span>
+                                        <span>{stat.label}</span>
+                                    </div>
+                                    <div className="mt-1 sm:mt-2 text-white/50">{expanded === stat.id ? <Icons.ChevronUp /> : <Icons.ChevronDown />}</div>
+                                </button>
+                            ))}
+                        </div>
+                        {stats.map((stat) => <div key={stat.id}>{renderContent(stat.id)}</div>)}
+                    </div>
+                </div>
+            );
+        };
+
+        // ===== AI CHAT =====
+        const AIChat = ({ isOpen, onClose }) => {
+            const [messages, setMessages] = useState([{ role: 'ai', text: 'مرحباً! أنا مساعد مؤشر. كيف يمكنني مساعدتك؟' }]);
+            const [input, setInput] = useState('');
+            const [isTyping, setIsTyping] = useState(false);
+            const aiResponses = { 'المستندات': 'تحتاج: صورة الهوية، صورة القرار، التظلم المقدم، ورد الجهة إن وجد.', 'التظلم': 'يجب تقديم التظلم خلال 60 يوماً من تاريخ العلم بالقرار.', 'default': 'يمكنني مساعدتك في معرفة المستندات المطلوبة والإجراءات النظامية.' };
+            
+            const handleSend = () => {
+                if (!input.trim()) return;
+                setMessages(prev => [...prev, { role: 'user', text: input }]);
+                setInput('');
+                setIsTyping(true);
+                setTimeout(() => {
+                    const response = Object.keys(aiResponses).find(key => input.includes(key));
+                    setMessages(prev => [...prev, { role: 'ai', text: aiResponses[response] || aiResponses.default }]);
+                    setIsTyping(false);
+                }, 1500);
+            };
+
+            if (!isOpen) return null;
+
+            return (
+                <>
+                    <div className="fixed inset-0 bg-black/50 z-40 sm:hidden" onClick={onClose}></div>
+                    <div className="chat-container fixed bottom-0 left-0 right-0 sm:bottom-20 sm:left-4 sm:right-auto w-full sm:w-96 bg-white rounded-t-2xl sm:rounded-xl overflow-hidden z-50 fade-in shadow-2xl border max-h-[80vh] sm:max-h-none">
+                        <div className="bg-bog-green text-white p-3 sm:p-4 flex items-center justify-between">
+                            <div className="flex items-center gap-2"><Icons.AI /><span className="font-bold text-sm sm:text-base">المساعد الذكي</span></div>
+                            <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-lg"><Icons.Close /></button>
+                        </div>
+                        <div className="h-60 sm:h-80 overflow-y-auto p-3 sm:p-4 bg-gray-50">
+                            {messages.map((msg, i) => (
+                                <div key={i} className={`mb-3 ${msg.role === 'user' ? 'text-left' : 'text-right'}`}>
+                                    <div className={`inline-block p-2 sm:p-3 rounded-xl max-w-[85%] text-sm sm:text-base ${msg.role === 'user' ? 'bg-bog-green text-white rounded-bl-none' : 'bg-white border rounded-br-none'}`}>{msg.text}</div>
+                                </div>
+                            ))}
+                            {isTyping && <div className="text-right"><div className="inline-block p-3 bg-white border rounded-xl"><span className="typing"><span>●</span><span>●</span><span>●</span></span></div></div>}
+                        </div>
+                        <div className="p-3 border-t flex gap-2 safe-area-bottom">
+                            <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSend()} placeholder="اكتب سؤالك..." className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-bog-green" />
+                            <button onClick={handleSend} className="btn-primary text-white px-4 py-2 rounded-lg text-sm font-medium">إرسال</button>
+                        </div>
+                    </div>
+                </>
+            );
+        };
+
+        // ===== DOCUMENT SCANNER =====
+        const DocumentScanner = ({ document, onComplete }) => {
+            const [stage, setStage] = useState('uploading');
+            const [progress, setProgress] = useState(0);
+            const [result, setResult] = useState(null);
+
+            useEffect(() => {
+                const stages = [{ name: 'uploading', duration: 800, progress: 25 }, { name: 'scanning', duration: 1200, progress: 50 }, { name: 'analyzing', duration: 1500, progress: 75 }, { name: 'complete', duration: 500, progress: 100 }];
+                let currentStage = 0;
+                const runStage = () => {
+                    if (currentStage < stages.length) {
+                        setStage(stages[currentStage].name);
+                        setProgress(stages[currentStage].progress);
+                        setTimeout(() => { currentStage++; runStage(); }, stages[currentStage].duration);
+                    } else {
+                        const docKey = Object.keys(aiAnalysisResults).find(k => document.name.includes(k)) || 'هوية';
+                        const aiResult = aiAnalysisResults[docKey];
+                        setResult(aiResult);
+                        setTimeout(() => onComplete(aiResult), 500);
+                    }
+                };
+                runStage();
+            }, []);
+
+            const stageLabels = { uploading: 'جاري الرفع...', scanning: 'المسح الضوئي...', analyzing: 'التحليل...', complete: 'اكتمل' };
+
+            return (
+                <div className="p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-3">
+                        <div className={`p-1.5 sm:p-2 rounded-full ${stage === 'complete' ? 'bg-green-500' : 'bg-blue-500'} text-white`}>{stage === 'complete' ? <Icons.Check /> : <Icons.Scan />}</div>
+                        <div className="flex-1 min-w-0">
+                            <div className="font-medium text-gray-800 text-sm sm:text-base">{stageLabels[stage]}</div>
+                            <div className="text-xs sm:text-sm text-gray-500 truncate">{document.name}</div>
+                        </div>
+                        <div className="text-xs sm:text-sm font-bold text-blue-600">{progress}%</div>
+                    </div>
+                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden"><div className="h-full bg-gradient-to-l from-blue-400 to-blue-600 progress-bar" style={{ width: `${progress}%` }} /></div>
+                    {result && <div className={`mt-3 p-2 sm:p-3 rounded-lg text-xs sm:text-sm ${result.status === 'success' ? 'bg-green-100 text-green-800' : result.status === 'warning' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}><div className="flex items-center gap-2 font-medium">{result.status === 'success' ? <Icons.Check /> : result.status === 'warning' ? <Icons.Warning /> : <Icons.Error />}<span>ثقة: {result.confidence}%</span></div></div>}
+                </div>
+            );
+        };
+
+        // ===== PROTOTYPE TAB =====
+        const PrototypeTab = ({ user }) => {
+            const [step, setStep] = useState(1);
+            const [answers, setAnswers] = useState({});
+            const [scanningDoc, setScanningDoc] = useState(null);
+            const [showChat, setShowChat] = useState(false);
+            const [documents, setDocuments] = useState([
+                { id: 1, name: 'صورة الهوية الوطنية', status: null, required: true, aiResult: null },
+                { id: 2, name: 'صورة القرار الإداري', status: null, required: true, aiResult: null },
+                { id: 3, name: 'التظلم المقدم للجهة', status: null, required: true, aiResult: null },
+                { id: 4, name: 'رد الجهة على التظلم', status: null, required: false, aiResult: null },
+            ]);
+
+            // Update documents when moving to step 2 based on role
+            useEffect(() => {
+                if (step === 2) {
+                    const baseDocs = [
+                        { id: 1, name: 'صورة الهوية الوطنية', status: null, required: true, aiResult: null },
+                        { id: 2, name: 'صورة القرار الإداري', status: null, required: true, aiResult: null },
+                        { id: 3, name: 'التظلم المقدم للجهة', status: null, required: true, aiResult: null },
+                        { id: 4, name: 'رد الجهة على التظلم', status: null, required: false, aiResult: null },
+                    ];
+                    
+                    if (answers.q3 === 'agent' || answers.q3 === 'lawyer') {
+                        baseDocs.push({ id: 5, name: 'الوكالة الشرعية', status: null, required: true, aiResult: null });
+                    }
+                    if (answers.q3 === 'lawyer') {
+                        baseDocs.push({ id: 6, name: 'رخصة المحاماة سارية المفعول', status: null, required: true, aiResult: null });
+                    }
+                    
+                    setDocuments(baseDocs);
+                }
+            }, [step, answers.q3]);
+
+            const questions = [
+                { id: 'q1', q: 'ما طبيعة مشكلتك مع الجهة الحكومية؟', options: [{ value: 'decision', label: 'صدر قرار إداري ضدي' }, { value: 'contract', label: 'نزاع على عقد إداري' }, { value: 'compensation', label: 'طلب تعويض' }, { value: 'other', label: 'أخرى' }] },
+                { id: 'q2', q: 'هل تظلمت للجهة الحكومية؟', options: [{ value: 'yes_replied', label: 'نعم، وجاء الرد ولم تمضي عليه ٦٠ يوم' }, { value: 'yes_no_reply', label: 'نعم، ولم يأت رد بعد ٦٠ يوم' }, { value: 'no', label: 'لا، لم أتظلم بعد' }] },
+                { id: 'q3', q: 'هل أنت:', options: [{ value: 'applicant', label: 'مقدم الطلب (صاحب الشأن)' }, { value: 'agent', label: 'وكيل' }, { value: 'lawyer', label: 'محامٍ' }] },
+                { id: 'q4', q: 'هل أنت أيضاً أحد أصحاب الشأن (مُدَّعٍ) مع الموكلين؟', options: [{ value: 'yes', label: 'نعم، أنا أحد المدعين' }, { value: 'no', label: 'لا، أنا وكيل فقط' }], showIf: 'agent' },
+            ];
+
+            const handleUpload = (docId) => setScanningDoc(documents.find(d => d.id === docId));
+            const handleScanComplete = (docId, result) => { setDocuments(docs => docs.map(d => d.id === docId ? { ...d, status: result.status, aiResult: result } : d)); setScanningDoc(null); };
+            const completionRate = () => { const required = documents.filter(d => d.required); return Math.round((required.filter(d => d.status === 'success' || d.status === 'warning').length / required.length) * 100); };
+            const resetPrototype = () => { 
+                setStep(1); 
+                setAnswers({}); 
+                setDocuments([
+                    { id: 1, name: 'صورة الهوية الوطنية', status: null, required: true, aiResult: null },
+                    { id: 2, name: 'صورة القرار الإداري', status: null, required: true, aiResult: null },
+                    { id: 3, name: 'التظلم المقدم للجهة', status: null, required: true, aiResult: null },
+                    { id: 4, name: 'رد الجهة على التظلم', status: null, required: false, aiResult: null },
+                ]); 
+            };
+            
+            // Validation: check if all required questions are answered
+            const canProceed = () => {
+                if (answers.q2 === 'no') return false;
+                if (!answers.q1 || !answers.q2 || !answers.q3) return false;
+                // If agent is selected, q4 must be answered
+                if (answers.q3 === 'agent' && !answers.q4) return false;
+                return true;
+            };
+
+            // Get role label for display
+            const getRoleLabel = () => {
+                if (answers.q3 === 'applicant') return 'مقدم الطلب (صاحب الشأن)';
+                if (answers.q3 === 'lawyer') return 'محامٍ';
+                if (answers.q3 === 'agent') {
+                    return answers.q4 === 'yes' ? 'وكيل ومُدَّعٍ' : 'وكيل';
+                }
+                return '';
+            };
+
+            // Dynamic documents based on role
+            const getRequiredDocs = () => {
+                const baseDocs = [
+                    { id: 1, name: 'صورة الهوية الوطنية', status: null, required: true, aiResult: null },
+                    { id: 2, name: 'صورة القرار الإداري', status: null, required: true, aiResult: null },
+                    { id: 3, name: 'التظلم المقدم للجهة', status: null, required: true, aiResult: null },
+                    { id: 4, name: 'رد الجهة على التظلم', status: null, required: false, aiResult: null },
+                ];
+                
+                if (answers.q3 === 'agent' || answers.q3 === 'lawyer') {
+                    baseDocs.push({ id: 5, name: 'الوكالة الشرعية', status: null, required: true, aiResult: null });
+                }
+                if (answers.q3 === 'lawyer') {
+                    baseDocs.push({ id: 6, name: 'رخصة المحاماة', status: null, required: true, aiResult: null });
+                }
+                
+                return baseDocs;
+            };
+
+            const renderStep1 = () => (
+                <div className="space-y-4 sm:space-y-6">
+                    {user && (
+                        <div className="card p-3 sm:p-4 bg-green-50 border-green-200 flex items-center gap-3 sm:gap-4">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-500 rounded-full flex items-center justify-center text-white flex-shrink-0"><Icons.Shield /></div>
+                            <div className="min-w-0"><div className="font-bold text-green-800 text-sm sm:text-base truncate">{user.name}</div><div className="text-xs sm:text-sm text-green-600">✓ موثق عبر نفاذ</div></div>
+                        </div>
+                    )}
+                    <div className="text-center mb-4 sm:mb-8">
+                        <div className="inline-flex items-center gap-2 bg-bog-green/10 text-bog-green px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium mb-3 sm:mb-4"><Icons.AI /><span>خدمة مؤشر</span></div>
+                        <h2 className="text-xl sm:text-2xl font-bold text-gray-800">أجب على الأسئلة التالية</h2>
+                        <p className="text-gray-500 text-sm sm:text-base">لتحديد متطلبات دعواك</p>
+                    </div>
+                    {questions.map((item, idx) => {
+                        // Skip q4 if q3 is not 'agent'
+                        if (item.showIf && answers.q3 !== item.showIf) return null;
+                        return (
+                        <div key={idx} className="card p-4 sm:p-6 fade-in">
+                            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-bog-green text-white rounded-full flex items-center justify-center font-bold text-sm sm:text-base flex-shrink-0">{item.showIf ? '٤' : idx + 1}</div>
+                                <h3 className="font-bold text-gray-800 text-sm sm:text-base">{item.q}</h3>
+                            </div>
+                            <div className={`grid gap-2 sm:gap-3 ${item.options.length === 2 ? 'grid-cols-2' : item.options.length === 3 ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-2'}`}>
+                                {item.options.map((opt, i) => (
+                                    <button key={i} onClick={() => {
+                                        const newAnswers = {...answers, [item.id]: opt.value};
+                                        // Clear q4 if q3 is changed from 'agent' to something else
+                                        if (item.id === 'q3' && opt.value !== 'agent') {
+                                            delete newAnswers.q4;
+                                        }
+                                        setAnswers(newAnswers);
+                                    }} className={`p-4 sm:p-5 rounded-xl border-2 text-center transition-all ${answers[item.id] === opt.value ? 'border-bog-green bg-bog-green/5' : 'border-gray-200 hover:border-gray-300'}`}>
+                                        <span className="text-sm sm:text-base font-medium text-gray-700">{opt.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )})}
+                    {answers.q2 === 'no' && <div className="card p-3 sm:p-4 bg-yellow-50 border-yellow-300"><div className="flex items-start gap-2 sm:gap-3"><Icons.Warning /><div><h4 className="font-bold text-yellow-800 text-sm sm:text-base">تنبيه</h4><p className="text-xs sm:text-sm text-yellow-700">يجب التظلم أولاً قبل رفع الدعوى.</p></div></div></div>}
+                    <button onClick={() => setStep(2)} disabled={!canProceed()} className={`w-full p-3 sm:p-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-sm sm:text-base ${canProceed() ? 'btn-primary text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>التالي <Icons.ArrowLeft /></button>
+                </div>
+            );
+
+            const renderStep2 = () => {
+                return (
+                <div className="space-y-4 sm:space-y-6">
+                    <div className="card p-4 sm:p-6 bg-bog-green/5 border-bog-green">
+                        <div className="flex items-center gap-3 sm:gap-4">
+                            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-bog-green rounded-xl flex items-center justify-center text-white flex-shrink-0"><Icons.Document /></div>
+                            <div>
+                                <h3 className="text-base sm:text-lg font-bold text-gray-800">فحص مستندات الدعوى</h3>
+                                <p className="text-gray-500 text-xs sm:text-sm">ارفع المستندات لقياس الجاهزية</p>
+                                <div className="mt-1 inline-block bg-bog-gold/20 text-bog-gold px-2 py-0.5 rounded text-xs font-medium">{getRoleLabel()}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="space-y-2 sm:space-y-3">
+                        {documents.map(doc => (
+                            <div key={doc.id}>
+                                {scanningDoc?.id === doc.id ? <DocumentScanner document={doc} onComplete={(result) => handleScanComplete(doc.id, result)} /> : (
+                                    <div className={`card p-3 sm:p-4 ${doc.status === 'success' ? 'status-success' : doc.status === 'warning' ? 'status-warning' : doc.status === 'error' ? 'status-error' : ''}`}>
+                                        <div className="flex items-center justify-between gap-2">
+                                            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                                                <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${doc.status === 'success' ? 'bg-green-500 text-white' : doc.status === 'warning' ? 'bg-yellow-500 text-white' : doc.status === 'error' ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-500'}`}><Icons.Document /></div>
+                                                <div className="min-w-0">
+                                                    <div className="font-medium text-gray-800 text-xs sm:text-sm truncate">{doc.name}{doc.required && <span className="text-red-500 mr-1">*</span>}</div>
+                                                    {doc.aiResult && <div className={`text-xs truncate ${doc.status === 'success' ? 'text-green-600' : doc.status === 'warning' ? 'text-yellow-600' : 'text-red-600'}`}>{doc.aiResult.message}</div>}
+                                                </div>
+                                            </div>
+                                            {doc.status ? (
+                                                <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white flex-shrink-0 ${doc.status === 'success' ? 'bg-green-500' : doc.status === 'warning' ? 'bg-yellow-500' : 'bg-red-500'}`}>{doc.status === 'success' ? <Icons.Check /> : doc.status === 'warning' ? <Icons.Warning /> : <Icons.Error />}</div>
+                                            ) : (
+                                                <button onClick={() => handleUpload(doc.id)} className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-bog-green/10 text-bog-green rounded-lg text-xs sm:text-sm whitespace-nowrap"><Icons.Upload /><span className="hidden sm:inline">رفع</span></button>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                    <div className="flex gap-2 sm:gap-3">
+                        <button onClick={() => setStep(1)} className="flex-1 p-3 sm:p-4 border-2 border-gray-200 text-gray-700 rounded-xl font-bold flex items-center justify-center gap-2 text-sm sm:text-base"><Icons.ArrowRight /> السابق</button>
+                        <button onClick={() => setStep(3)} className="flex-1 p-3 sm:p-4 btn-primary text-white rounded-xl font-bold flex items-center justify-center gap-2 text-sm sm:text-base">عرض المؤشر <Icons.ArrowLeft /></button>
+                    </div>
+                </div>
+            );
+            };
+
+            const renderStep3 = () => {
+                const rate = completionRate();
+                const hasErrors = documents.some(d => d.status === 'error' && d.required);
+                const getStatusColor = () => {
+                    if (rate === 100 && !hasErrors) return 'text-green-500';
+                    if (rate >= 70) return 'text-yellow-500';
+                    if (rate >= 40) return 'text-orange-500';
+                    return 'text-red-500';
+                };
+                const getStatusBg = () => {
+                    if (rate === 100 && !hasErrors) return 'bg-green-500';
+                    if (rate >= 70) return 'bg-yellow-500';
+                    if (rate >= 40) return 'bg-orange-500';
+                    return 'bg-red-500';
+                };
+                const getStatusText = () => {
+                    if (rate === 100 && !hasErrors) return 'جاهز للتقديم';
+                    if (rate >= 70) return 'شبه جاهز';
+                    if (rate >= 40) return 'يحتاج استكمال';
+                    return 'غير جاهز';
+                };
+                return (
+                    <div className="space-y-4 sm:space-y-6">
+                        <div className={`card p-6 sm:p-8 text-center ${rate === 100 && !hasErrors ? 'ai-glow' : ''}`}>
+                            <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 sm:mb-6">📊 مؤشر الجاهزية</h2>
+                            
+                            {/* Circular Gauge */}
+                            <div className="relative w-40 h-40 sm:w-48 sm:h-48 mx-auto mb-4">
+                                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                                    {/* Background circle */}
+                                    <circle cx="50" cy="50" r="42" fill="none" stroke="#e5e7eb" strokeWidth="12" />
+                                    {/* Progress circle */}
+                                    <circle cx="50" cy="50" r="42" fill="none" className={getStatusBg().replace('bg-', 'stroke-')} strokeWidth="12" strokeLinecap="round" strokeDasharray={`${rate * 2.64} 264`} style={{ transition: 'stroke-dasharray 1s ease' }} />
+                                </svg>
+                                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                    <span className={`text-4xl sm:text-5xl font-bold ${getStatusColor()}`}>{rate}%</span>
+                                    <span className="text-xs sm:text-sm text-gray-500 mt-1">{getStatusText()}</span>
+                                </div>
+                            </div>
+
+                            {/* Status Bar */}
+                            <div className="flex justify-center gap-2 text-xs mb-4">
+                                <div className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-red-500"></span><span>0-40%</span></div>
+                                <div className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-orange-500"></span><span>40-70%</span></div>
+                                <div className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-yellow-500"></span><span>70-99%</span></div>
+                                <div className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-green-500"></span><span>100%</span></div>
+                            </div>
+                        </div>
+                        
+                        <div className="card p-4 sm:p-6">
+                            <h3 className="font-bold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base"><Icons.AI /> تقرير الفحص</h3>
+                            <div className="space-y-2 sm:space-y-3">
+                                {documents.filter(d => d.status).map(doc => (
+                                    <div key={doc.id} className={`p-2 sm:p-3 rounded-lg ${doc.status === 'success' ? 'bg-green-50' : doc.status === 'warning' ? 'bg-yellow-50' : 'bg-red-50'}`}>
+                                        <div className="flex items-center justify-between gap-2">
+                                            <span className="font-medium text-gray-800 text-xs sm:text-sm truncate">{doc.name}</span>
+                                            <span className={`text-xs font-medium whitespace-nowrap ${doc.status === 'success' ? 'text-green-600' : doc.status === 'warning' ? 'text-yellow-600' : 'text-red-600'}`}>{doc.aiResult?.message}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                                {documents.filter(d => !d.status && d.required).length > 0 && (
+                                    <div className="p-2 sm:p-3 rounded-lg bg-gray-50 border border-dashed border-gray-300">
+                                        <div className="text-xs sm:text-sm text-gray-500">
+                                            <span className="font-medium">مستندات لم تُرفع: </span>
+                                            {documents.filter(d => !d.status && d.required).map(d => d.name).join('، ')}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        
+                        {rate === 100 && !hasErrors ? (
+                            <button className="w-full p-3 sm:p-4 btn-primary text-white rounded-xl font-bold flex items-center justify-center gap-2 text-sm sm:text-base"><Icons.Link /> انتقل لمنصة معين لتقديم الدعوى</button>
+                        ) : (
+                            <div className="card p-4 sm:p-6 bg-yellow-50 border-yellow-300">
+                                <div className="flex items-start gap-2 sm:gap-3"><Icons.Warning /><div><h4 className="font-bold text-yellow-800 text-sm sm:text-base">المؤشر يُظهر نواقص</h4><p className="text-xs sm:text-sm text-yellow-700 mb-2 sm:mb-3">أكمل المستندات المطلوبة لرفع نسبة الجاهزية.</p><button onClick={() => setStep(2)} className="px-3 sm:px-4 py-2 bg-yellow-600 text-white rounded-lg text-xs sm:text-sm font-medium">استكمال المستندات</button></div></div>
+                            </div>
+                        )}
+                        <button onClick={resetPrototype} className="w-full p-3 text-gray-500 text-xs sm:text-sm">🔄 إعادة الفحص من البداية</button>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="max-w-2xl mx-auto px-3 sm:px-0">
+                    <div className="flex items-center justify-center gap-2 sm:gap-4 mb-6 sm:mb-8">
+                        {[{ num: 1, label: 'تحديد' }, { num: 2, label: 'فحص' }, { num: 3, label: 'المؤشر' }].map((s, i) => (
+                            <div key={s.num} className="flex items-center">
+                                <div className="flex flex-col items-center">
+                                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-bold text-sm sm:text-lg ${step >= s.num ? 'bg-bog-green text-white' : 'bg-gray-200 text-gray-500'}`}>{step > s.num ? <Icons.Check /> : s.num}</div>
+                                    <span className={`text-xs mt-1 sm:mt-2 ${step >= s.num ? 'text-bog-green font-medium' : 'text-gray-400'}`}>{s.label}</span>
+                                </div>
+                                {i < 2 && <div className={`w-8 sm:w-16 h-1 mx-1 sm:mx-2 rounded ${step > s.num ? 'bg-bog-green' : 'bg-gray-200'}`}/>}
+                            </div>
+                        ))}
+                    </div>
+                    {step === 1 && renderStep1()}
+                    {step === 2 && renderStep2()}
+                    {step === 3 && renderStep3()}
+                    <button onClick={() => setShowChat(!showChat)} className="fixed bottom-4 right-4 sm:bottom-4 sm:left-4 sm:right-auto w-12 h-12 sm:w-14 sm:h-14 btn-primary text-white rounded-full flex items-center justify-center shadow-lg z-30"><Icons.Chat /></button>
+                    <AIChat isOpen={showChat} onClose={() => setShowChat(false)} />
+                </div>
+            );
+        };
+
+        // ===== FEATURES TAB =====
+        const FeaturesTab = () => {
+            const features = [
+                { icon: <Icons.Scan />, title: 'المسح الضوئي', desc: 'قراءة وتحليل المستندات', tech: 'OCR' },
+                { icon: <Icons.AI />, title: 'فحص ذكي', desc: 'التحقق من صحة البيانات', tech: 'AI' },
+                { icon: <Icons.Calendar />, title: 'فحص المواعيد', desc: 'التحقق من الصلاحية', tech: 'Validation' },
+                { icon: <Icons.Fingerprint />, title: 'نفاذ', desc: 'تسجيل دخول آمن', tech: 'SSO' },
+                { icon: <Icons.Chat />, title: 'مساعد ذكي', desc: 'إرشاد المستفيد', tech: 'AI Chat' },
+                { icon: <Icons.Link />, title: 'تكامل معين', desc: 'انتقال سلس للتقديم', tech: 'API' },
+            ];
+            return (
+                <div className="max-w-4xl mx-auto space-y-4 sm:space-y-8 px-3 sm:px-0">
+                    <div className="card p-4 sm:p-8 text-center">
+                        <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2 sm:mb-4">📊 مؤشر</h2>
+                        <p className="text-base sm:text-xl text-gray-600">تعرّف على جاهزية دعواك قبل التقديم</p>
+                    </div>
+                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                        {features.map((f, i) => (
+                            <div key={i} className="card p-4 sm:p-6">
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-bog-green/10 text-bog-green rounded-xl flex items-center justify-center mb-3 sm:mb-4">{f.icon}</div>
+                                <h3 className="font-bold text-gray-800 mb-1 sm:mb-2 text-sm sm:text-base">{f.title}</h3>
+                                <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3">{f.desc}</p>
+                                <span className="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded">{f.tech}</span>
+                            </div>
+                        ))}
+                    </div>
+                    
+                    {/* Value Proposition */}
+                    <div className="card p-4 sm:p-6 bg-bog-green/5 border-bog-green">
+                        <h3 className="font-bold text-gray-800 mb-4 text-center">📈 الأثر المتوقع</h3>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 text-center">
+                            <div className="p-3 bg-white rounded-lg">
+                                <div className="text-2xl sm:text-3xl font-bold text-bog-green">70%</div>
+                                <div className="text-xs text-gray-500">تقليل وقت المراجعة</div>
+                            </div>
+                            <div className="p-3 bg-white rounded-lg">
+                                <div className="text-2xl sm:text-3xl font-bold text-bog-green">85%</div>
+                                <div className="text-xs text-gray-500">تقليل الرفض الشكلي</div>
+                            </div>
+                            <div className="p-3 bg-white rounded-lg">
+                                <div className="text-2xl sm:text-3xl font-bold text-bog-green">+40%</div>
+                                <div className="text-xs text-gray-500">رضا المستفيدين</div>
+                            </div>
+                            <div className="p-3 bg-white rounded-lg">
+                                <div className="text-2xl sm:text-3xl font-bold text-bog-green">فوري</div>
+                                <div className="text-xs text-gray-500">نتيجة الفحص</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // ===== MAIN APP =====
+        const App = () => {
+            const [isLoggedIn, setIsLoggedIn] = useState(false);
+            const [user, setUser] = useState(null);
+            const [activeTab, setActiveTab] = useState('prototype');
+
+            if (!isLoggedIn) return <NafathLogin onLoginSuccess={(u) => { setUser(u); setIsLoggedIn(true); }} />;
+
+            return (
+                <div className="min-h-screen flex flex-col">
+                    <Header user={user} onLogout={() => { setUser(null); setIsLoggedIn(false); }} />
+                    <StatsSection />
+                    <main className="flex-1 max-w-6xl mx-auto w-full px-0 sm:px-4 pb-20 sm:pb-8">
+                        <div className="text-center mb-4 sm:mb-8 px-3 sm:px-0">
+                            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-1 sm:mb-2">📊 مؤشر</h1>
+                            <p className="text-gray-600 text-sm sm:text-base">تعرّف على جاهزية دعواك قبل التقديم</p>
+                        </div>
+                        <div className="flex justify-center gap-2 mb-4 sm:mb-8 px-3 sm:px-0">
+                            <button onClick={() => setActiveTab('prototype')} className={`px-3 sm:px-6 py-2 sm:py-3 rounded-xl font-bold transition-all flex items-center gap-1 sm:gap-2 text-xs sm:text-base ${activeTab === 'prototype' ? 'bg-bog-green text-white shadow-lg' : 'bg-white text-gray-700 border'}`}><Icons.AI /> جرّب مؤشر</button>
+                            <button onClick={() => setActiveTab('features')} className={`px-3 sm:px-6 py-2 sm:py-3 rounded-xl font-bold transition-all flex items-center gap-1 sm:gap-2 text-xs sm:text-base ${activeTab === 'features' ? 'bg-bog-green text-white shadow-lg' : 'bg-white text-gray-700 border'}`}><Icons.Document /> عن الخدمة</button>
+                        </div>
+                        {activeTab === 'prototype' ? <PrototypeTab user={user} /> : <FeaturesTab />}
+                    </main>
+                    <footer className="bg-bog-greenDark text-white py-4 sm:py-6 safe-area-bottom">
+                        <div className="max-w-6xl mx-auto px-4 text-center">
+                            <p className="text-green-200 text-sm sm:text-base">هاكاثون ذكاء القضاء | ديوان المظالم</p>
+                            <p className="text-xs sm:text-sm text-green-300 mt-1">4-5 فبراير 2026</p>
+                        </div>
+                    </footer>
+                </div>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
