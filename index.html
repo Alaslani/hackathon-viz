@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1B5E20">
+    <title>مؤشر - ديوان المظالم</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        bog: { green: '#1B5E20', greenLight: '#2E7D32', greenDark: '#0D3D16', gold: '#C5A028', cream: '#F5F5F0' },
+                        iam: { bg: '#0f1419', card: '#1c2128', border: '#30363d', green: '#238636', text: '#c9d1d9', textMuted: '#8b949e', input: '#0d1117' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { font-family: 'IBM Plex Sans Arabic', sans-serif; -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+        html, body { overflow-x: hidden; }
+        .gradient-header { background: linear-gradient(135deg, #0D3D16 0%, #1B5E20 50%, #2E7D32 100%); }
+        .card { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #E5E5E5; }
+        .btn-primary { background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%); }
+        .status-success { background: #E8F5E9; border: 1px solid #4CAF50; }
+        .status-warning { background: #FFF8E1; border: 1px solid #FFC107; }
+        .progress-bar { transition: width 0.8s ease; }
+        .fade-in { animation: fadeIn 0.5s ease forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .ai-glow { box-shadow: 0 0 20px rgba(27, 94, 32, 0.3); }
+        .expand-content { max-height: 0; overflow: hidden; transition: max-height 0.5s ease; }
+        .expand-content.open { max-height: 1200px; }
+        .iam-input { background: #0d1117; border: 1px solid #30363d; color: #c9d1d9; }
+        .iam-input:focus { border-color: #238636; outline: none; box-shadow: 0 0 0 3px rgba(35, 134, 54, 0.3); }
+        .iam-btn-green { background: #238636; color: white; }
+        .nafath-spinner { animation: spin 1.5s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .number-box { transition: all 0.3s; min-height: 70px; min-width: 70px; }
+        .number-box.selected { background: #238636; color: white; border-color: #238636; }
+        .stroke-green-500 { stroke: #22c55e; }
+        .stroke-yellow-500 { stroke: #eab308; }
+        .stroke-orange-500 { stroke: #f97316; }
+        .stroke-red-500 { stroke: #ef4444; }
+        .typing span { animation: blink 1.4s infinite; opacity: 0.3; }
+        .typing span:nth-child(2) { animation-delay: 0.2s; }
+        .typing span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes blink { 0%, 60%, 100% { opacity: 0.3; } 30% { opacity: 1; } }
+        .timeline-line { position: absolute; right: 15px; top: 30px; bottom: 10px; width: 2px; background: #e5e7eb; }
+        .timeline-dot { position: absolute; right: 11px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid white; }
+        .modal-overlay { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+        .pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @media print { .no-print { display: none !important; } body { background: white !important; } }
+        @media (max-width: 640px) { .chat-container { position: fixed; bottom: 0; left: 0; right: 0; width: 100%; border-radius: 16px 16px 0 0; max-height: 70vh; } }
+    </style>
+</head>
+<body class="bg-bog-cream min-h-screen">
+    <div id="root"></div>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const Icons = {
+            Logo: ({ className = "w-8 h-8" }) => (<svg className={className} viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="45" fill="#1B5E20"/><path d="M30 70V35h8v35h-8zM42 70V45h8v25h-8zM54 70V40h8v30h-8zM66 70V30h8v40h-8z" fill="#C5A028"/><circle cx="50" cy="25" r="8" fill="#C5A028"/></svg>),
+            Check: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>,
+            Warning: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
+            Document: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
+            AI: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
+            Scan: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>,
+            Chat: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>,
+            Shield: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>,
+            Link: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>,
+            ArrowLeft: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>,
+            ChevronDown: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>,
+            ChevronUp: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>,
+            User: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>,
+            Smartphone: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
+            Logout: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>,
+            Close: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>,
+            Clock: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+            Download: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>,
+            Print: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>,
+            QRCode: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>,
+            Share: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>,
+            Briefcase: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
+            Question: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+            Eye: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>,
+            Plus: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>,
+            Folder: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>,
+        };
+
+        const faqData = [
+            { q: 'ما المدة النظامية للتظلم؟', a: '60 يوماً من تاريخ العلم بالقرار الإداري.' },
+            { q: 'هل الوكالة إلزامية؟', a: 'فقط إذا كان مقدم الدعوى وكيلاً أو محامياً.' },
+            { q: 'ماذا لو لم ترد الجهة؟', a: 'بعد 60 يوماً يُعتبر رفضاً ضمنياً ويحق لك رفع الدعوى.' },
+            { q: 'كم مدة رفع الدعوى؟', a: '60 يوماً من تاريخ الرد أو انتهاء مدة الانتظار.' },
+            { q: 'ما المستندات الأساسية؟', a: 'صورة الهوية، القرار، التظلم، ورد الجهة إن وجد.' },
+        ];
+
+        const lawyerCases = [
+            { id: 1, client: 'محمد السعيد', type: 'إلغاء قرار', status: 'ready', progress: 100, deadline: '1446/08/15' },
+            { id: 2, client: 'أحمد العتيبي', type: 'تعويض', status: 'pending', progress: 75, deadline: '1446/07/20' },
+            { id: 3, client: 'فهد القحطاني', type: 'نزاع عقد', status: 'pending', progress: 50, deadline: '1446/07/10' },
+            { id: 4, client: 'خالد الشمري', type: 'إلغاء قرار', status: 'late', progress: 25, deadline: '1446/06/01' },
+        ];
+
+        const aiResults = { 'هوية': { status: 'success', message: 'سارية' }, 'قرار': { status: 'success', message: 'مكتمل' }, 'تظلم': { status: 'warning', message: 'مقبول' }, 'رد': { status: 'success', message: 'موثق' }, 'وكالة': { status: 'success', message: 'سارية' }, 'رخصة': { status: 'success', message: 'سارية' } };
+
+        // ===== NAFATH LOGIN =====
+        const NafathLogin = ({ onLoginSuccess }) => {
+            const [stage, setStage] = useState('input');
+            const [nationalId, setNationalId] = useState('');
+            const [userType, setUserType] = useState('citizen');
+            const [verificationNumber, setVerificationNumber] = useState(null);
+            const [selectedNumber, setSelectedNumber] = useState(null);
+            const [countdown, setCountdown] = useState(90);
+
+            const handleSubmit = () => {
+                if (nationalId.length !== 10) return;
+                setStage('verifying');
+                setTimeout(() => { setVerificationNumber(Math.floor(Math.random() * 90) + 10); setStage('numbers'); }, 2000);
+            };
+
+            const handleNumberSelect = (num) => {
+                setSelectedNumber(num);
+                if (num === verificationNumber) {
+                    setStage('success');
+                    setTimeout(() => onLoginSuccess({ id: nationalId, name: userType === 'lawyer' ? 'أ. عبدالله السعيد' : 'عبدالله محمد السعيد', type: userType }), 1500);
+                }
+            };
+
+            useEffect(() => { if (stage === 'numbers' && countdown > 0) { const t = setTimeout(() => setCountdown(countdown - 1), 1000); return () => clearTimeout(t); } }, [stage, countdown]);
+
+            const generateNumbers = () => { if (!verificationNumber) return []; const n = [verificationNumber]; while (n.length < 3) { const r = Math.floor(Math.random() * 90) + 10; if (!n.includes(r)) n.push(r); } return n.sort(() => Math.random() - 0.5); };
+
+            return (
+                <div className="min-h-screen bg-iam-bg flex items-center justify-center p-4">
+                    <div className="w-full max-w-md bg-iam-card rounded-xl p-6 border border-iam-border">
+                        {stage === 'input' && (
+                            <div className="fade-in">
+                                <div className="text-center mb-6">
+                                    <Icons.Logo className="w-16 h-16 mx-auto mb-3" />
+                                    <h1 className="text-2xl font-bold text-white">مؤشر</h1>
+                                    <p className="text-iam-textMuted text-sm">تعرّف على جاهزية دعواك</p>
+                                </div>
+                                <div className="mb-4">
+                                    <label className="block text-sm text-iam-text mb-2">نوع المستخدم</label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <button onClick={() => setUserType('citizen')} className={`p-3 rounded-lg border text-sm ${userType === 'citizen' ? 'bg-iam-green text-white border-iam-green' : 'border-iam-border text-iam-text'}`}><Icons.User className="w-5 h-5 mx-auto mb-1" />مواطن</button>
+                                        <button onClick={() => setUserType('lawyer')} className={`p-3 rounded-lg border text-sm ${userType === 'lawyer' ? 'bg-iam-green text-white border-iam-green' : 'border-iam-border text-iam-text'}`}><Icons.Briefcase className="w-5 h-5 mx-auto mb-1" />محامي</button>
+                                    </div>
+                                </div>
+                                <div className="mb-4">
+                                    <label className="block text-sm text-iam-text mb-2">رقم الهوية</label>
+                                    <input type="tel" value={nationalId} onChange={(e) => setNationalId(e.target.value.replace(/\D/g, '').slice(0, 10))} placeholder="10 أرقام" className="w-full p-3 rounded-lg iam-input text-lg" dir="ltr" />
+                                </div>
+                                <button onClick={handleSubmit} disabled={nationalId.length !== 10} className={`w-full p-3 rounded-lg font-bold ${nationalId.length === 10 ? 'iam-btn-green' : 'bg-iam-border text-iam-textMuted'}`}>تسجيل الدخول</button>
+                                <p className="text-xs text-iam-textMuted text-center mt-4">💡 للتجربة: أدخل أي 10 أرقام</p>
+                            </div>
+                        )}
+                        {stage === 'verifying' && (
+                            <div className="text-center py-8 fade-in">
+                                <div className="w-16 h-16 mx-auto mb-4 relative"><div className="absolute inset-0 border-4 border-iam-green rounded-full nafath-spinner" style={{ borderTopColor: 'transparent' }}></div><div className="absolute inset-2 bg-iam-input rounded-full flex items-center justify-center"><Icons.Smartphone /></div></div>
+                                <h3 className="text-lg font-bold text-white">جاري التحقق...</h3>
+                            </div>
+                        )}
+                        {stage === 'numbers' && (
+                            <div className="text-center fade-in">
+                                <h3 className="text-lg font-bold text-white mb-2">اختر الرقم الصحيح</h3>
+                                <div className="bg-iam-green/20 border border-iam-green rounded-lg p-2 mb-4"><p className="text-sm text-iam-green">الرقم: <strong className="text-xl">{verificationNumber}</strong></p></div>
+                                <div className="flex justify-center gap-3 mb-4">{generateNumbers().map((num) => (<button key={num} onClick={() => handleNumberSelect(num)} className={`w-16 h-16 rounded-xl border-2 border-iam-border text-xl font-bold number-box text-iam-text ${selectedNumber === num ? 'selected' : ''}`}>{num}</button>))}</div>
+                                <div className="text-xs text-iam-textMuted">ينتهي خلال: <span className="text-iam-green font-bold">{countdown}</span> ثانية</div>
+                            </div>
+                        )}
+                        {stage === 'success' && (<div className="text-center py-8 fade-in"><div className="w-16 h-16 bg-iam-green/20 rounded-full flex items-center justify-center mx-auto mb-3"><Icons.Check /></div><h3 className="text-lg font-bold text-iam-green">تم التحقق!</h3></div>)}
+                    </div>
+                </div>
+            );
+        };
+
+        // ===== HEADER =====
+        const Header = ({ user, onLogout, onLawyerMode }) => (
+            <header className="gradient-header text-white no-print">
+                <div className="max-w-6xl mx-auto px-3 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2"><Icons.Logo /><div><h1 className="text-base font-bold">ديوان المظالم</h1></div></div>
+                    <div className="flex items-center gap-2">
+                        {user?.type === 'lawyer' && <button onClick={onLawyerMode} className="px-3 py-2 bg-bog-gold text-black rounded-lg text-xs font-bold flex items-center gap-1"><Icons.Briefcase /> لوحة المحامي</button>}
+                        {user && <div className="flex items-center gap-2 bg-white/10 px-2 py-2 rounded-lg"><div className="w-7 h-7 bg-bog-gold rounded-full flex items-center justify-center"><Icons.User /></div><span className="text-sm hidden sm:block">{user.name}</span><button onClick={onLogout} className="p-1"><Icons.Logout /></button></div>}
+                    </div>
+                </div>
+            </header>
+        );
+
+        // ===== BEFORE/AFTER =====
+        const BeforeAfter = () => (
+            <div className="card p-4 mb-4">
+                <h3 className="font-bold text-gray-800 mb-3 text-center">📊 الفرق مع مؤشر</h3>
+                <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3"><h4 className="font-bold text-red-700 text-sm mb-2 text-center">❌ بدون</h4><ul className="text-xs text-red-600 space-y-1"><li>• مستندات ناقصة</li><li>• رفض شكلي</li><li>• 3 أسابيع ضائعة</li><li>• إحباط</li></ul></div>
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3"><h4 className="font-bold text-green-700 text-sm mb-2 text-center">✅ مع مؤشر</h4><ul className="text-xs text-green-600 space-y-1"><li>• فحص مسبق</li><li>• قبول أول مرة</li><li>• 5 دقائق</li><li>• ثقة</li></ul></div>
+                </div>
+            </div>
+        );
+
+        // ===== FAQ =====
+        const FAQ = () => {
+            const [open, setOpen] = useState(null);
+            return (
+                <div className="card p-4 mb-4">
+                    <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2"><Icons.Question /> الأسئلة الشائعة</h3>
+                    <div className="space-y-2">{faqData.map((item, i) => (<div key={i} className="border rounded-lg overflow-hidden"><button onClick={() => setOpen(open === i ? null : i)} className="w-full p-3 text-right flex items-center justify-between bg-gray-50 hover:bg-gray-100"><span className="font-medium text-sm">{item.q}</span>{open === i ? <Icons.ChevronUp /> : <Icons.ChevronDown />}</button><div className={`expand-content ${open === i ? 'open' : ''}`}><p className="p-3 text-sm text-gray-600 bg-white">{item.a}</p></div></div>))}</div>
+                </div>
+            );
+        };
+
+        // ===== QR MODAL =====
+        const QRModal = ({ isOpen, onClose }) => {
+            const qrRef = useRef(null);
+            const [generated, setGenerated] = useState(false);
+            useEffect(() => { if (isOpen && qrRef.current && !generated && window.QRCode) { qrRef.current.innerHTML = ''; new window.QRCode(qrRef.current, { text: 'https://moen.bog.gov.sa/case/MOA-2026-001', width: 150, height: 150, colorDark: '#1B5E20' }); setGenerated(true); } }, [isOpen, generated]);
+            useEffect(() => { if (!isOpen) setGenerated(false); }, [isOpen]);
+            if (!isOpen) return null;
+            return (
+                <div className="fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4" onClick={onClose}>
+                    <div className="bg-white rounded-xl p-6 max-w-sm w-full fade-in" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between mb-4"><h3 className="font-bold">📱 مشاركة الحالة</h3><button onClick={onClose}><Icons.Close /></button></div>
+                        <div className="text-center"><div ref={qrRef} className="flex justify-center mb-4"></div><p className="text-sm text-gray-600 mb-4">امسح للاطلاع على الحالة</p><div className="flex gap-2"><button onClick={() => navigator.clipboard.writeText('https://moen.bog.gov.sa/case/MOA-2026-001')} className="flex-1 p-2 bg-gray-100 rounded-lg text-sm flex items-center justify-center gap-1"><Icons.Link /> نسخ</button><button className="flex-1 p-2 bg-green-500 text-white rounded-lg text-sm flex items-center justify-center gap-1"><Icons.Share /> واتساب</button></div></div>
+                    </div>
+                </div>
+            );
+        };
+
+        // ===== PDF MODAL =====
+        const PDFModal = ({ isOpen, onClose, data }) => {
+            if (!isOpen) return null;
+            return (
+                <div className="fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4" onClick={onClose}>
+                    <div className="bg-white rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto fade-in" onClick={e => e.stopPropagation()}>
+                        <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-white"><h3 className="font-bold">📄 تقرير الجاهزية</h3><button onClick={onClose}><Icons.Close /></button></div>
+                        <div className="p-6">
+                            <div className="text-center mb-6 pb-4 border-b"><Icons.Logo className="w-12 h-12 mx-auto mb-2" /><h2 className="text-xl font-bold text-bog-green">مؤشر - ديوان المظالم</h2></div>
+                            <div className="bg-gray-50 rounded-lg p-4 mb-4"><div className="grid grid-cols-2 gap-3 text-sm"><div><span className="text-gray-500">رقم التقرير:</span> <span className="font-bold">MOA-2026-001</span></div><div><span className="text-gray-500">التاريخ:</span> <span className="font-bold">{new Date().toLocaleDateString('ar-SA')}</span></div><div><span className="text-gray-500">الجاهزية:</span> <span className="font-bold text-green-600">{data?.progress || 100}%</span></div><div><span className="text-gray-500">الحالة:</span> <span className="font-bold text-green-600">جاهز</span></div></div></div>
+                            <div className="mb-4"><h4 className="font-bold mb-2">بيانات الطلب</h4><div className="space-y-2 text-sm"><div className="flex justify-between p-2 bg-gray-50 rounded"><span>نوع الدعوى</span><span className="font-medium">إلغاء قرار</span></div><div className="flex justify-between p-2 bg-gray-50 rounded"><span>صفة المقدم</span><span className="font-medium">{data?.role || 'صاحب الشأن'}</span></div></div></div>
+                            <div className="mb-4"><h4 className="font-bold mb-2">المستندات</h4><div className="space-y-1">{['صورة الهوية ✓', 'صورة القرار ✓', 'التظلم ✓', 'رد الجهة ✓'].map((d, i) => (<div key={i} className="p-2 bg-green-50 rounded text-sm text-green-800">{d}</div>))}</div></div>
+                        </div>
+                        <div className="p-4 border-t flex gap-2 sticky bottom-0 bg-white"><button onClick={() => window.print()} className="flex-1 p-3 btn-primary text-white rounded-lg font-bold flex items-center justify-center gap-2"><Icons.Print /> طباعة</button><button className="flex-1 p-3 bg-blue-500 text-white rounded-lg font-bold flex items-center justify-center gap-2"><Icons.Download /> حفظ</button></div>
+                    </div>
+                </div>
+            );
+        };
+
+        // ===== CASE TRACKING =====
+        const CaseTracking = () => {
+            const [expanded, setExpanded] = useState(false);
+            const steps = [{ status: 'done', title: 'إنشاء الطلب', date: '1446/06/01' }, { status: 'done', title: 'فحص المستندات', date: '1446/06/01' }, { status: 'done', title: 'التحقق من المواعيد', date: '1446/06/01' }, { status: 'current', title: 'جاهز للتقديم', date: '1446/06/01' }, { status: 'pending', title: 'التقديم في معين', date: '-' }, { status: 'pending', title: 'قيد الدعوى', date: '-' }];
+            return (
+                <div className="card p-4 mb-4">
+                    <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center justify-between"><h3 className="font-bold flex items-center gap-2"><Icons.Eye /> تتبع الحالة</h3>{expanded ? <Icons.ChevronUp /> : <Icons.ChevronDown />}</button>
+                    <div className={`expand-content ${expanded ? 'open' : ''}`}>
+                        <div className="mt-4 relative pr-6">
+                            <div className="timeline-line"></div>
+                            {steps.map((step, i) => (<div key={i} className="relative pb-4 pr-6"><div className={`timeline-dot ${step.status === 'done' ? 'bg-green-500' : step.status === 'current' ? 'bg-bog-gold pulse' : 'bg-gray-300'}`}></div><div className={step.status === 'pending' ? 'opacity-50' : ''}><div className="flex items-center justify-between"><span className={`font-medium text-sm ${step.status === 'current' ? 'text-bog-gold' : ''}`}>{step.title}</span><span className="text-xs text-gray-400">{step.date}</span></div></div></div>))}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // ===== LAWYER DASHBOARD =====
+        const LawyerDashboard = ({ user, onBack }) => {
+            const stats = { ready: lawyerCases.filter(c => c.status === 'ready').length, pending: lawyerCases.filter(c => c.status === 'pending').length, late: lawyerCases.filter(c => c.status === 'late').length };
+            return (
+                <div className="max-w-4xl mx-auto px-3 py-4">
+                    <div className="flex items-center justify-between mb-4"><div><h1 className="text-xl font-bold flex items-center gap-2"><Icons.Briefcase /> لوحة المحامي</h1><p className="text-sm text-gray-500">{user.name}</p></div><button onClick={onBack} className="px-3 py-2 bg-gray-100 rounded-lg text-sm">العودة</button></div>
+                    <div className="grid grid-cols-3 gap-3 mb-4">
+                        <div className="card p-4 text-center border-2 border-green-200 bg-green-50"><div className="text-2xl font-bold text-green-600">{stats.ready}</div><div className="text-xs text-green-700">جاهزة</div></div>
+                        <div className="card p-4 text-center border-2 border-yellow-200 bg-yellow-50"><div className="text-2xl font-bold text-yellow-600">{stats.pending}</div><div className="text-xs text-yellow-700">قيد الإعداد</div></div>
+                        <div className="card p-4 text-center border-2 border-red-200 bg-red-50"><div className="text-2xl font-bold text-red-600">{stats.late}</div><div className="text-xs text-red-700">متأخرة</div></div>
+                    </div>
+                    <div className="card p-4">
+                        <div className="flex items-center justify-between mb-4"><h3 className="font-bold">قضايا الموكلين</h3><button className="px-3 py-2 btn-primary text-white rounded-lg text-sm flex items-center gap-1"><Icons.Plus /> جديدة</button></div>
+                        <div className="space-y-2">{lawyerCases.map(c => (<div key={c.id} className={`p-3 rounded-lg border-2 ${c.status === 'ready' ? 'border-green-200 bg-green-50' : c.status === 'late' ? 'border-red-200 bg-red-50' : 'border-yellow-200 bg-yellow-50'}`}><div className="flex items-center justify-between mb-2"><div className="flex items-center gap-2"><Icons.Folder /><span className="font-medium">{c.client}</span></div><span className={`text-xs px-2 py-1 rounded-full ${c.status === 'ready' ? 'bg-green-200 text-green-800' : c.status === 'late' ? 'bg-red-200 text-red-800' : 'bg-yellow-200 text-yellow-800'}`}>{c.status === 'ready' ? 'جاهز' : c.status === 'late' ? 'متأخر' : 'قيد الإعداد'}</span></div><div className="flex items-center justify-between text-xs text-gray-500"><span>{c.type}</span><span>آخر موعد: {c.deadline}</span></div><div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden"><div className={`h-full rounded-full ${c.status === 'ready' ? 'bg-green-500' : c.status === 'late' ? 'bg-red-500' : 'bg-yellow-500'}`} style={{ width: `${c.progress}%` }}></div></div></div>))}</div>
+                    </div>
+                </div>
+            );
+        };
+
+        // ===== DOCUMENT SCANNER =====
+        const DocScanner = ({ doc, onComplete }) => {
+            const [progress, setProgress] = useState(0);
+            useEffect(() => { const t = setInterval(() => { setProgress(p => { if (p >= 100) { clearInterval(t); const k = Object.keys(aiResults).find(k => doc.name.includes(k)) || 'هوية'; setTimeout(() => onComplete(aiResults[k]), 300); return 100; } return p + 10; }); }, 150); return () => clearInterval(t); }, []);
+            return (<div className="p-3 bg-blue-50 rounded-lg border border-blue-200"><div className="flex items-center gap-3 mb-2"><div className="p-2 bg-blue-500 rounded-full text-white"><Icons.Scan /></div><div className="flex-1"><div className="font-medium text-sm">جاري الفحص...</div><div className="text-xs text-gray-500">{doc.name}</div></div><span className="text-sm font-bold text-blue-600">{progress}%</span></div><div className="h-2 bg-gray-200 rounded-full overflow-hidden"><div className="h-full bg-blue-500 progress-bar" style={{ width: `${progress}%` }}></div></div></div>);
+        };
+
+        // ===== AI CHAT =====
+        const AIChat = ({ isOpen, onClose }) => {
+            const [messages, setMessages] = useState([{ role: 'ai', text: 'مرحباً! كيف يمكنني مساعدتك؟' }]);
+            const [input, setInput] = useState('');
+            const [typing, setTyping] = useState(false);
+            const send = () => { if (!input.trim()) return; setMessages(p => [...p, { role: 'user', text: input }]); setInput(''); setTyping(true); setTimeout(() => { const r = { 'المستندات': 'تحتاج: الهوية، القرار، التظلم، والرد.', 'التظلم': '60 يوماً من تاريخ العلم.', 'المدة': '60 يوماً من الرد أو انتهاء المدة.' }; const k = Object.keys(r).find(k => input.includes(k)); setMessages(p => [...p, { role: 'ai', text: r[k] || 'يمكنني مساعدتك في المستندات والمواعيد.' }]); setTyping(false); }, 1500); };
+            if (!isOpen) return null;
+            return (<><div className="fixed inset-0 bg-black/50 z-40 sm:hidden" onClick={onClose}></div><div className="chat-container fixed bottom-0 left-0 right-0 sm:bottom-20 sm:left-4 sm:right-auto w-full sm:w-80 bg-white rounded-t-2xl sm:rounded-xl overflow-hidden z-50 shadow-2xl border"><div className="bg-bog-green text-white p-3 flex items-center justify-between"><span className="font-bold text-sm flex items-center gap-2"><Icons.AI /> مساعد مؤشر</span><button onClick={onClose}><Icons.Close /></button></div><div className="h-52 overflow-y-auto p-3 bg-gray-50">{messages.map((m, i) => (<div key={i} className={`mb-2 ${m.role === 'user' ? 'text-left' : 'text-right'}`}><div className={`inline-block p-2 rounded-xl max-w-[85%] text-sm ${m.role === 'user' ? 'bg-bog-green text-white' : 'bg-white border'}`}>{m.text}</div></div>))}{typing && <div className="text-right"><div className="inline-block p-2 bg-white border rounded-xl"><span className="typing"><span>●</span><span>●</span><span>●</span></span></div></div>}</div><div className="p-3 border-t flex gap-2"><input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && send()} placeholder="اكتب سؤالك..." className="flex-1 border rounded-lg px-3 py-2 text-sm" /><button onClick={send} className="btn-primary text-white px-4 py-2 rounded-lg text-sm">إرسال</button></div></div></>);
+        };
+
+        // ===== PROTOTYPE TAB =====
+        const PrototypeTab = ({ user }) => {
+            const [step, setStep] = useState(1);
+            const [answers, setAnswers] = useState({});
+            const [dates, setDates] = useState({ grievanceDate: '', responseDate: '' });
+            const [scanningDoc, setScanningDoc] = useState(null);
+            const [showChat, setShowChat] = useState(false);
+            const [showQR, setShowQR] = useState(false);
+            const [showPDF, setShowPDF] = useState(false);
+            const [documents, setDocuments] = useState([{ id: 1, name: 'صورة الهوية الوطنية', status: null, required: true }, { id: 2, name: 'صورة القرار الإداري', status: null, required: true }, { id: 3, name: 'التظلم المقدم للجهة', status: null, required: true }, { id: 4, name: 'رد الجهة على التظلم', status: null, required: false }]);
+
+            useEffect(() => { if (step === 2) { const d = [{ id: 1, name: 'صورة الهوية الوطنية', status: null, required: true }, { id: 2, name: 'صورة القرار الإداري', status: null, required: true }, { id: 3, name: 'التظلم المقدم للجهة', status: null, required: true }, { id: 4, name: 'رد الجهة على التظلم', status: null, required: false }]; if (answers.q3 === 'agent' || answers.q3 === 'lawyer') d.push({ id: 5, name: 'الوكالة الشرعية', status: null, required: true }); if (answers.q3 === 'lawyer') d.push({ id: 6, name: 'رخصة المحاماة', status: null, required: true }); setDocuments(d); } }, [step, answers.q3]);
+
+            const questions = [{ id: 'q1', q: 'طبيعة المشكلة؟', options: [{ value: 'decision', label: 'قرار إداري' }, { value: 'contract', label: 'نزاع عقد' }, { value: 'compensation', label: 'تعويض' }] }, { id: 'q2', q: 'هل تظلمت؟', options: [{ value: 'yes_replied', label: 'نعم وجاء الرد' }, { value: 'yes_no_reply', label: 'نعم ولم يرد بعد 60 يوم' }, { value: 'no', label: 'لم أتظلم' }] }, { id: 'q3', q: 'صفتك؟', options: [{ value: 'applicant', label: 'صاحب الشأن' }, { value: 'agent', label: 'وكيل' }, { value: 'lawyer', label: 'محامٍ' }] }];
+            const handleUpload = (id) => setScanningDoc(documents.find(d => d.id === id));
+            const handleScanComplete = (id, r) => { setDocuments(d => d.map(doc => doc.id === id ? { ...doc, status: r.status, aiResult: r } : doc)); setScanningDoc(null); };
+            const rate = () => { const req = documents.filter(d => d.required); return Math.round((req.filter(d => d.status === 'success' || d.status === 'warning').length / req.length) * 100); };
+            const canProceed = () => answers.q1 && answers.q2 && answers.q3 && answers.q2 !== 'no';
+            const getRole = () => answers.q3 === 'applicant' ? 'صاحب الشأن' : answers.q3 === 'lawyer' ? 'محامٍ' : 'وكيل';
+            const reset = () => { setStep(1); setAnswers({}); setDates({ grievanceDate: '', responseDate: '' }); setDocuments([{ id: 1, name: 'صورة الهوية الوطنية', status: null, required: true }, { id: 2, name: 'صورة القرار الإداري', status: null, required: true }, { id: 3, name: 'التظلم المقدم للجهة', status: null, required: true }, { id: 4, name: 'رد الجهة على التظلم', status: null, required: false }]); };
+
+            const renderStep1 = () => (<div className="space-y-4">{user && <div className="card p-3 bg-green-50 border-green-200 flex items-center gap-3"><div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white"><Icons.Shield /></div><div><div className="font-bold text-green-800 text-sm">{user.name}</div><div className="text-xs text-green-600">✓ موثق</div></div></div>}<BeforeAfter />{questions.map((item, idx) => (<div key={idx} className="card p-4 fade-in"><div className="flex items-center gap-2 mb-3"><div className="w-7 h-7 bg-bog-green text-white rounded-full flex items-center justify-center font-bold text-sm">{idx + 1}</div><h3 className="font-bold text-sm">{item.q}</h3></div><div className="grid grid-cols-3 gap-2">{item.options.map((opt, i) => (<button key={i} onClick={() => setAnswers({...answers, [item.id]: opt.value})} className={`p-3 rounded-xl border-2 text-center text-sm ${answers[item.id] === opt.value ? 'border-bog-green bg-bog-green/5' : 'border-gray-200'}`}>{opt.label}</button>))}</div></div>))}{answers.q2 === 'no' && <div className="card p-4 bg-yellow-50 border-yellow-300"><p className="text-sm text-yellow-800 font-medium">⚠️ يجب التظلم أولاً</p></div>}{answers.q2 && answers.q2 !== 'no' && <div className="card p-4 border-2 border-bog-green/30 bg-bog-green/5"><h3 className="font-bold mb-3 flex items-center gap-2"><Icons.Clock /> حاسبة المواعيد</h3><div className="grid grid-cols-2 gap-3 mb-3"><div><label className="text-xs text-gray-600">تاريخ التظلم</label><input type="date" value={dates.grievanceDate} onChange={e => setDates({...dates, grievanceDate: e.target.value})} className="w-full p-2 border rounded-lg text-sm mt-1" /></div><div><label className="text-xs text-gray-600">تاريخ الرد</label><input type="date" value={dates.responseDate} onChange={e => setDates({...dates, responseDate: e.target.value})} className="w-full p-2 border rounded-lg text-sm mt-1" /></div></div>{dates.grievanceDate && <div className="p-3 bg-green-100 rounded-lg border border-green-300"><p className="text-sm text-green-800 font-medium">✅ المدة النظامية سارية</p></div>}</div>}<FAQ /><button onClick={() => setStep(2)} disabled={!canProceed()} className={`w-full p-3 rounded-xl font-bold text-sm ${canProceed() ? 'btn-primary text-white' : 'bg-gray-200 text-gray-400'}`}>التالي <Icons.ArrowLeft /></button></div>);
+
+            const renderStep2 = () => (<div className="space-y-4"><div className="card p-4 bg-bog-green/5 border-bog-green"><div className="flex items-center gap-3"><div className="w-12 h-12 bg-bog-green rounded-xl flex items-center justify-center text-white"><Icons.Document /></div><div><h3 className="font-bold">فحص المستندات</h3><div className="inline-block bg-bog-gold/20 text-bog-gold px-2 py-0.5 rounded text-xs font-medium mt-1">{getRole()}</div></div></div></div><div className="space-y-2">{documents.map(doc => (<div key={doc.id}>{scanningDoc?.id === doc.id ? <DocScanner doc={doc} onComplete={(r) => handleScanComplete(doc.id, r)} /> : <div className={`card p-3 ${doc.status === 'success' ? 'status-success' : doc.status === 'warning' ? 'status-warning' : ''}`}><div className="flex items-center justify-between"><div className="flex items-center gap-2"><div className={`w-8 h-8 rounded-lg flex items-center justify-center ${doc.status === 'success' ? 'bg-green-500 text-white' : doc.status === 'warning' ? 'bg-yellow-500 text-white' : 'bg-gray-100'}`}><Icons.Document /></div><div><div className="font-medium text-xs">{doc.name}{doc.required && <span className="text-red-500 mr-1">*</span>}</div>{doc.aiResult && <div className={`text-xs ${doc.status === 'success' ? 'text-green-600' : 'text-yellow-600'}`}>{doc.aiResult.message}</div>}</div></div>{doc.status ? <div className="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center"><Icons.Check /></div> : <button onClick={() => handleUpload(doc.id)} className="px-3 py-1 bg-bog-green/10 text-bog-green rounded text-xs">رفع</button>}</div></div>}</div>))}</div><div className="flex gap-2"><button onClick={() => setStep(1)} className="flex-1 p-3 border-2 border-gray-200 rounded-xl font-bold text-sm">السابق</button><button onClick={() => setStep(3)} className="flex-1 p-3 btn-primary text-white rounded-xl font-bold text-sm">المؤشر</button></div></div>);
+
+            const renderStep3 = () => { const r = rate(); const col = r === 100 ? 'green' : r >= 70 ? 'yellow' : r >= 40 ? 'orange' : 'red'; return (<div className="space-y-4"><div className={`card p-6 text-center ${r === 100 ? 'ai-glow' : ''}`}><h2 className="text-lg font-bold mb-4">📊 مؤشر الجاهزية</h2><div className="relative w-32 h-32 mx-auto mb-4"><svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="none" stroke="#e5e7eb" strokeWidth="12" /><circle cx="50" cy="50" r="42" fill="none" className={`stroke-${col}-500`} strokeWidth="12" strokeLinecap="round" strokeDasharray={`${r * 2.64} 264`} /></svg><div className="absolute inset-0 flex flex-col items-center justify-center"><span className={`text-3xl font-bold text-${col}-500`}>{r}%</span><span className="text-xs text-gray-500">{r === 100 ? 'جاهز' : 'غير مكتمل'}</span></div></div></div><CaseTracking /><div className="card p-4"><h3 className="font-bold mb-3 text-sm">📋 الملخص</h3><div className="space-y-2 text-sm"><div className="flex justify-between p-2 bg-gray-50 rounded"><span>نوع الدعوى</span><span className="font-medium">إلغاء قرار</span></div><div className="flex justify-between p-2 bg-gray-50 rounded"><span>صفة المقدم</span><span className="font-medium">{getRole()}</span></div><div className="flex justify-between p-2 bg-gray-50 rounded"><span>المستندات</span><span className="font-medium text-green-600">{documents.filter(d => d.status).length}/{documents.length}</span></div></div></div><div className="grid grid-cols-2 gap-2"><button onClick={() => setShowPDF(true)} className="p-3 bg-blue-500 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2"><Icons.Download /> PDF</button><button onClick={() => setShowQR(true)} className="p-3 bg-purple-500 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2"><Icons.QRCode /> QR</button></div>{r === 100 ? <button className="w-full p-4 btn-primary text-white rounded-xl font-bold flex items-center justify-center gap-2"><Icons.Link /> انتقل لمعين</button> : <button onClick={() => setStep(2)} className="w-full p-3 bg-yellow-500 text-white rounded-xl font-bold text-sm">استكمال النواقص</button>}<button onClick={reset} className="w-full p-3 text-gray-500 text-xs">🔄 إعادة</button></div>); };
+
+            return (<div className="max-w-2xl mx-auto px-3"><div className="flex items-center justify-center gap-2 mb-6">{[{ num: 1, label: 'تحديد' }, { num: 2, label: 'فحص' }, { num: 3, label: 'المؤشر' }].map((s, i) => (<div key={s.num} className="flex items-center"><div className="flex flex-col items-center"><div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${step >= s.num ? 'bg-bog-green text-white' : 'bg-gray-200'}`}>{step > s.num ? <Icons.Check /> : s.num}</div><span className={`text-xs mt-1 ${step >= s.num ? 'text-bog-green font-medium' : 'text-gray-400'}`}>{s.label}</span></div>{i < 2 && <div className={`w-8 h-1 mx-1 rounded ${step > s.num ? 'bg-bog-green' : 'bg-gray-200'}`}/>}</div>))}</div>{step === 1 && renderStep1()}{step === 2 && renderStep2()}{step === 3 && renderStep3()}<button onClick={() => setShowChat(!showChat)} className="fixed bottom-4 left-4 w-12 h-12 btn-primary text-white rounded-full flex items-center justify-center shadow-lg z-30 no-print"><Icons.Chat /></button><AIChat isOpen={showChat} onClose={() => setShowChat(false)} /><QRModal isOpen={showQR} onClose={() => setShowQR(false)} /><PDFModal isOpen={showPDF} onClose={() => setShowPDF(false)} data={{ progress: rate(), role: getRole() }} /></div>);
+        };
+
+        // ===== FEATURES TAB =====
+        const FeaturesTab = () => {
+            const features = [{ icon: <Icons.Clock />, title: 'حاسبة المواعيد', desc: 'المدد النظامية' }, { icon: <Icons.Link />, title: 'تحقق الوكالة', desc: 'ربط ناجز' }, { icon: <Icons.Scan />, title: 'فحص ذكي', desc: 'تحليل AI' }, { icon: <Icons.Download />, title: 'تصدير PDF', desc: 'تقرير جاهزية' }, { icon: <Icons.QRCode />, title: 'مشاركة QR', desc: 'مشاركة الحالة' }, { icon: <Icons.Briefcase />, title: 'وضع المحامي', desc: 'لوحة تحكم' }];
+            return (<div className="max-w-4xl mx-auto px-3 space-y-4"><div className="card p-6 text-center"><h2 className="text-2xl font-bold mb-2">📊 مؤشر</h2><p className="text-gray-600">تعرّف على جاهزية دعواك</p></div><div className="grid grid-cols-2 sm:grid-cols-3 gap-3">{features.map((f, i) => (<div key={i} className="card p-4 text-center"><div className="w-10 h-10 bg-bog-green/10 text-bog-green rounded-xl flex items-center justify-center mx-auto mb-2">{f.icon}</div><h3 className="font-bold text-sm">{f.title}</h3><p className="text-xs text-gray-500">{f.desc}</p></div>))}</div><div className="card p-4 bg-bog-green/5"><h3 className="font-bold text-center mb-3">📈 الأثر المتوقع</h3><div className="grid grid-cols-4 gap-2 text-center"><div className="p-2 bg-white rounded"><div className="text-xl font-bold text-bog-green">70%</div><div className="text-xs">توفير الوقت</div></div><div className="p-2 bg-white rounded"><div className="text-xl font-bold text-bog-green">85%</div><div className="text-xs">تقليل الرفض</div></div><div className="p-2 bg-white rounded"><div className="text-xl font-bold text-bog-green">+40%</div><div className="text-xs">رضا المستفيد</div></div><div className="p-2 bg-white rounded"><div className="text-xl font-bold text-bog-green">5 د</div><div className="text-xs">وقت الفحص</div></div></div><p className="text-xs text-gray-400 text-center mt-2">* أرقام تقديرية</p></div></div>);
+        };
+
+        // ===== MAIN APP =====
+        const App = () => {
+            const [isLoggedIn, setIsLoggedIn] = useState(false);
+            const [user, setUser] = useState(null);
+            const [activeTab, setActiveTab] = useState('prototype');
+            const [showLawyer, setShowLawyer] = useState(false);
+
+            if (!isLoggedIn) return <NafathLogin onLoginSuccess={(u) => { setUser(u); setIsLoggedIn(true); }} />;
+            if (showLawyer && user?.type === 'lawyer') return (<div className="min-h-screen flex flex-col"><Header user={user} onLogout={() => { setUser(null); setIsLoggedIn(false); }} /><main className="flex-1 bg-bog-cream"><LawyerDashboard user={user} onBack={() => setShowLawyer(false)} /></main></div>);
+
+            return (<div className="min-h-screen flex flex-col"><Header user={user} onLogout={() => { setUser(null); setIsLoggedIn(false); }} onLawyerMode={() => setShowLawyer(true)} /><main className="flex-1 pb-20 sm:pb-8"><div className="text-center py-4 px-3"><h1 className="text-2xl font-bold">📊 مؤشر</h1><p className="text-gray-600 text-sm">تعرّف على جاهزية دعواك</p></div><div className="flex justify-center gap-2 mb-4 px-3"><button onClick={() => setActiveTab('prototype')} className={`px-4 py-2 rounded-xl font-bold text-sm ${activeTab === 'prototype' ? 'bg-bog-green text-white' : 'bg-white border'}`}>جرّب</button><button onClick={() => setActiveTab('features')} className={`px-4 py-2 rounded-xl font-bold text-sm ${activeTab === 'features' ? 'bg-bog-green text-white' : 'bg-white border'}`}>المميزات</button></div>{activeTab === 'prototype' ? <PrototypeTab user={user} /> : <FeaturesTab />}</main><footer className="bg-bog-greenDark text-white py-4 no-print"><div className="text-center"><p className="text-green-200 text-sm">هاكاثون ذكاء القضاء | ديوان المظالم</p><p className="text-xs text-green-300">4-5 فبراير 2026</p></div></footer></div>);
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
